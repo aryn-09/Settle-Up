@@ -1,0 +1,341 @@
+<template>
+    <lightning-card title="Settlement Manager" icon-name="standard:currency">
+        <div slot="actions">
+            <lightning-button 
+                label="Create Settlement" 
+                variant="brand" 
+                onclick={handleCreateSettlement}
+                disabled={isLoading}>
+            </lightning-button>
+            <lightning-button 
+                label="Optimal Settlements" 
+                variant="neutral" 
+                onclick={handleOptimalSettlements}
+                disabled={isLoading}>
+            </lightning-button>
+        </div>
+
+        <!-- Loading Spinner -->
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+        </template>
+
+        <div class="slds-p-horizontal_medium">
+            <!-- Optimal Settlements Section -->
+            <template if:true={hasOptimalSettlements}>
+                <div class="slds-m-bottom_large">
+                    <h3 class="slds-text-heading_small slds-m-bottom_small">
+                        <lightning-icon icon-name="utility:strategy" size="x-small"></lightning-icon>
+                        Suggested Optimal Settlements
+                    </h3>
+                    <div class="slds-grid slds-wrap slds-gutters_small">
+                        <template for:each={optimalSettlements} for:item="settlement">
+                            <div key={settlement.id} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                <div class="slds-box slds-theme_shade slds-p-around_small">
+                                    <div class="slds-grid slds-grid_align-spread">
+                                        <div class="slds-col">
+                                            <p class="slds-text-body_regular">
+                                                <strong>{settlement.fromPlayerName}</strong> pays 
+                                                <strong>{settlement.toPlayerName}</strong>
+                                            </p>
+                                            <p class="slds-text-color_success slds-text-heading_small">
+                                                {settlement.formattedAmount}
+                                            </p>
+                                            <p class="slds-text-body_small slds-text-color_weak">
+                                                {settlement.description}
+                                            </p>
+                                        </div>
+                                        <div class="slds-col slds-no-flex">
+                                            <lightning-button 
+                                                label="Create" 
+                                                variant="success" 
+                                                size="small"
+                                                data-settlement={settlement.settlementData}
+                                                onclick={handleCreateOptimalSettlement}>
+                                            </lightning-button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Pending Settlements -->
+            <template if:true={pendingSettlements.length}>
+                <div class="slds-m-bottom_large">
+                    <h3 class="slds-text-heading_small slds-m-bottom_small">
+                        <lightning-icon icon-name="utility:clock" size="x-small"></lightning-icon>
+                        Pending Settlements
+                    </h3>
+                    <div class="slds-grid slds-wrap slds-gutters_small">
+                        <template for:each={pendingSettlements} for:item="settlement">
+                            <div key={settlement.Id} class="slds-col slds-size_1-of-1">
+                                <div class="settlement-card slds-box slds-p-around_small">
+                                    <div class="slds-grid slds-grid_align-spread">
+                                        <div class="slds-col slds-grow">
+                                            <div class="slds-grid slds-grid_vertical-align-center">
+                                                <div class="slds-col slds-grow">
+                                                    <p class="slds-text-body_regular">
+                                                        <strong>{settlement.From_Player_Name__c}</strong> 
+                                                        → <strong>{settlement.To_Player_Name__c}</strong>
+                                                    </p>
+                                                    <p class="slds-text-heading_small slds-text-color_success">
+                                                        {settlement.formattedAmount}
+                                                    </p>
+                                                    <template if:true={settlement.Notes__c}>
+                                                        <p class="slds-text-body_small slds-text-color_weak">
+                                                            {settlement.Notes__c}
+                                                        </p>
+                                                    </template>
+                                                    <div class="slds-grid slds-grid_vertical-align-center slds-m-top_x-small">
+                                                        <lightning-badge 
+                                                            label={settlement.Status__c} 
+                                                            variant={settlement.statusVariant}>
+                                                        </lightning-badge>
+                                                        <span class="slds-m-left_small slds-text-body_small">
+                                                            via {settlement.Payment_Method__c}
+                                                        </span>
+                                                        <template if:true={settlement.Reference_Number__c}>
+                                                            <span class="slds-m-left_small slds-text-body_small">
+                                                                Ref: {settlement.Reference_Number__c}
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="slds-col slds-no-flex">
+                                            <template if:true={settlement.canConfirm}>
+                                                <lightning-button 
+                                                    label="Confirm Payment" 
+                                                    variant="success" 
+                                                    size="small"
+                                                    data-id={settlement.Id}
+                                                    onclick={handleConfirmSettlement}
+                                                    class="slds-m-right_x-small">
+                                                </lightning-button>
+                                            </template>
+                                            <template if:true={settlement.canCancel}>
+                                                <lightning-button 
+                                                    label="Cancel" 
+                                                    variant="destructive-text" 
+                                                    size="small"
+                                                    data-id={settlement.Id}
+                                                    onclick={handleCancelSettlement}>
+                                                </lightning-button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Confirmed Settlements -->
+            <template if:true={confirmedSettlements.length}>
+                <div class="slds-m-bottom_medium">
+                    <h3 class="slds-text-heading_small slds-m-bottom_small">
+                        <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
+                        Recent Confirmed Settlements
+                    </h3>
+                    <div class="confirmed-settlements">
+                        <template for:each={confirmedSettlements} for:item="settlement">
+                            <div key={settlement.Id} class="slds-grid slds-grid_align-spread slds-p-vertical_x-small slds-border_bottom">
+                                <div class="slds-col">
+                                    <p class="slds-text-body_small">
+                                        <strong>{settlement.From_Player_Name__c}</strong> paid 
+                                        <strong>{settlement.To_Player_Name__c}</strong> 
+                                        <span class="slds-text-color_success">{settlement.formattedAmount}</span>
+                                    </p>
+                                    <p class="slds-text-body_small slds-text-color_weak">
+                                        {settlement.Date__c} via {settlement.Payment_Method__c}
+                                    </p>
+                                </div>
+                                <div class="slds-col slds-no-flex">
+                                    <lightning-badge 
+                                        label="Confirmed" 
+                                        variant="success">
+                                    </lightning-badge>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- No Settlements Message -->
+            <template if:false={hasSettlements}>
+                <div class="slds-text-align_center slds-p-vertical_large">
+                    <lightning-icon icon-name="utility:money" size="large" variant="neutral"></lightning-icon>
+                    <h3 class="slds-text-heading_small slds-m-top_small">No Settlements Yet</h3>
+                    <p class="slds-text-body_regular slds-text-color_weak">
+                        Create settlements to track payments between group members
+                    </p>
+                </div>
+            </template>
+        </div>
+
+        <!-- Create Settlement Modal -->
+        <template if:true={showCreateModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                                title="Close" onclick={handleCloseModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-text-id_modal slds-modal__title">Create Settlement</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-form slds-form_stacked">
+                            <div class="slds-grid slds-gutters slds-wrap">
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-combobox
+                                        name="fromPlayer"
+                                        label="Who is paying?"
+                                        value={newSettlement.fromPlayerId}
+                                        placeholder="Select player"
+                                        options={fromPlayerOptions}
+                                        data-field="fromPlayerId"
+                                        onchange={handleFormInput}
+                                        required>
+                                    </lightning-combobox>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-combobox
+                                        name="toPlayer"
+                                        label="Who is receiving?"
+                                        value={newSettlement.toPlayerId}
+                                        placeholder="Select player"
+                                        options={toPlayerOptions}
+                                        data-field="toPlayerId"
+                                        onchange={handleFormInput}
+                                        required>
+                                    </lightning-combobox>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input
+                                        type="number"
+                                        name="amount"
+                                        label="Amount"
+                                        value={newSettlement.amount}
+                                        step="0.01"
+                                        min="0.01"
+                                        data-field="amount"
+                                        onchange={handleFormInput}
+                                        required>
+                                    </lightning-input>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-combobox
+                                        name="paymentMethod"
+                                        label="Payment Method"
+                                        value={newSettlement.paymentMethod}
+                                        options={paymentMethodOptions}
+                                        data-field="paymentMethod"
+                                        onchange={handleFormInput}>
+                                    </lightning-combobox>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input
+                                        type="text"
+                                        name="referenceNumber"
+                                        label="Reference Number (Optional)"
+                                        value={newSettlement.referenceNumber}
+                                        placeholder="Transaction ID, Check #, etc."
+                                        data-field="referenceNumber"
+                                        onchange={handleFormInput}>
+                                    </lightning-input>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-textarea
+                                        name="notes"
+                                        label="Notes (Optional)"
+                                        value={newSettlement.notes}
+                                        placeholder="Additional notes about this settlement"
+                                        data-field="notes"
+                                        onchange={handleFormInput}>
+                                    </lightning-textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Cancel" 
+                            onclick={handleCloseModal}>
+                        </lightning-button>
+                        <lightning-button 
+                            variant="brand" 
+                            label="Create Settlement" 
+                            onclick={handleSaveSettlement}
+                            disabled={isLoading}>
+                        </lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Confirm Payment Modal -->
+        <template if:true={showConfirmModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                                title="Close" onclick={handleCloseModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-text-id_modal slds-modal__title">Confirm Payment Received</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <template if:true={selectedSettlement}>
+                            <div class="slds-text-align_center">
+                                <lightning-icon icon-name="utility:money" size="large" variant="success"></lightning-icon>
+                                <h3 class="slds-text-heading_medium slds-m-top_small">
+                                    Confirm you received {selectedSettlement.formattedAmount}
+                                </h3>
+                                <p class="slds-text-body_regular slds-m-top_small">
+                                    From: <strong>{selectedSettlement.From_Player_Name__c}</strong>
+                                </p>
+                                <p class="slds-text-body_regular">
+                                    Payment Method: <strong>{selectedSettlement.Payment_Method__c}</strong>
+                                </p>
+                                <template if:true={selectedSettlement.Reference_Number__c}>
+                                    <p class="slds-text-body_regular">
+                                        Reference: <strong>{selectedSettlement.Reference_Number__c}</strong>
+                                    </p>
+                                </template>
+                                <div class="slds-box slds-theme_warning slds-m-top_medium">
+                                    <p class="slds-text-body_small">
+                                        ⚠️ Only confirm if you have actually received the payment. 
+                                        This action cannot be undone.
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Cancel" 
+                            onclick={handleCloseModal}>
+                        </lightning-button>
+                        <lightning-button 
+                            variant="success" 
+                            label="Yes, I Received Payment" 
+                            onclick={handleConfirmPayment}
+                            disabled={isLoading}>
+                        </lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </lightning-card>
+</template>

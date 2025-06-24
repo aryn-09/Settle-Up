@@ -1,0 +1,333 @@
+<template>
+    <!-- Modal Container -->
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container" style="max-width: 50rem;">
+                
+                <!-- Modal Header -->
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                            onclick={handleCancel} title="Close">
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
+                </header>
+
+                <!-- Modal Body -->
+                <div class="slds-modal__content slds-p-around_medium" style="max-height: 70vh; overflow-y: auto;">
+                    
+                    <!-- Loading Spinner -->
+                    <template if:true={isLoading}>
+                        <div class="slds-is-relative slds-p-vertical_large">
+                            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                        </div>
+                    </template>
+
+                    <template if:false={isLoading}>
+                        
+                        <!-- Basic Expense Information -->
+                        <div class="slds-grid slds-wrap slds-gutters_medium">
+                            
+                            <!-- Expense Description -->
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-input
+                                    label="Expense Description"
+                                    value={expenseData.name}
+                                    data-field="name"
+                                    onchange={handleInputChange}
+                                    placeholder="Enter expense description (e.g., Grocery shopping)"
+                                    required
+                                    class={errors.name}
+                                ></lightning-input>
+                                <template if:true={errors.name}>
+                                    <div class="slds-form-element__help">{errors.name}</div>
+                                </template>
+                            </div>
+
+                            <!-- Amount and Date -->
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-input
+                                    type="number"
+                                    label="Amount"
+                                    value={expenseData.amount}
+                                    data-field="amount"
+                                    onchange={handleInputChange}
+                                    step="0.01"
+                                    min="0"
+                                    formatter="currency"
+                                    required
+                                    class={errors.amount}
+                                ></lightning-input>
+                                <template if:true={errors.amount}>
+                                    <div class="slds-form-element__help">{errors.amount}</div>
+                                </template>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-input
+                                    type="date"
+                                    label="Date"
+                                    value={expenseData.date}
+                                    data-field="date"
+                                    onchange={handleInputChange}
+                                    required
+                                ></lightning-input>
+                            </div>
+
+                            <!-- Category and Paid By -->
+                            <div class="slds-col slds-size_1-of-2">
+                                <lightning-combobox
+                                    label="Category"
+                                    value={expenseData.category}
+                                    options={categoryOptions}
+                                    data-field="category"
+                                    onchange={handleInputChange}
+                                    placeholder="Select category"
+                                    required
+                                    class={errors.category}
+                                ></lightning-combobox>
+                                <template if:true={errors.category}>
+                                    <div class="slds-form-element__help">{errors.category}</div>
+                                </template>
+                            </div>
+
+                            <!-- Paid By Dropdown -->
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-combobox
+                                    label="Paid By"
+                                    value={expenseData.paidBy}
+                                    options={paidByOptions}
+                                    onchange={handleInputChange}
+                                    data-field="paidBy"
+                                    placeholder="Select who paid"
+                                ></lightning-combobox>
+                            </div>
+
+                            <!-- Location -->
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-input
+                                    label="Location (Optional)"
+                                    value={expenseData.location}
+                                    data-field="location"
+                                    onchange={handleInputChange}
+                                    placeholder="Where was this expense?"
+                                ></lightning-input>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-textarea
+                                    label="Notes (Optional)"
+                                    value={expenseData.notes}
+                                    data-field="notes"
+                                    onchange={handleInputChange}
+                                    placeholder="Add any additional notes..."
+                                    max-length="1000"
+                                ></lightning-textarea>
+                            </div>
+                        </div>
+
+                        <!-- Split Configuration Section -->
+                        <div class="slds-m-top_large">
+                            <h3 class="slds-text-heading_small slds-m-bottom_medium">Split Configuration</h3>
+                            
+                            <!-- Split Method Selection -->
+                            <div class="slds-m-bottom_medium">
+                                <lightning-radio-group
+                                    label="How should this be split?"
+                                    options={splitMethodOptions}
+                                    value={expenseData.splitMethod}
+                                    onchange={handleSplitMethodChange}
+                                    type="button"
+                                ></lightning-radio-group>
+                            </div>
+
+                            <!-- Member Selection -->
+                            <div class="slds-m-bottom_medium">
+                                <div class="slds-form-element">
+                                    <label class="slds-form-element__label">
+                                        <abbr class="slds-required" title="required">*</abbr>
+                                        Split with
+                                    </label>
+                                    <div class="slds-form-element__control">
+                                        <div class="slds-button-group slds-m-bottom_x-small">
+                                            <button class="slds-button slds-button_neutral" 
+                                                    onclick={selectAllMembers} type="button">
+                                                Select All
+                                            </button>
+                                            <button class="slds-button slds-button_neutral" 
+                                                    onclick={selectNoneMembers} type="button">
+                                                Select None
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Member Checkboxes with Split Details -->
+                                        <div class="slds-grid slds-wrap slds-gutters_small">
+                                            <template for:each={groupMembers} for:item="member">
+                                                <div key={member.id} class="slds-col slds-size_1-of-1">
+                                                    <div class="slds-box slds-p-around_small">
+                                                        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                                                            
+                                                            <!-- Member Selection Checkbox -->
+                                                            <div class="slds-col">
+                                                                <lightning-input
+                                                                    type="checkbox"
+                                                                    label={member.nickname}
+                                                                    checked={member.isSelected}
+                                                                    data-member-id={member.id}
+                                                                    onchange={handleMemberSelection}
+                                                                ></lightning-input>
+                                                            </div>
+
+                                                            <!-- Split Amount Display (Always shown) -->
+                                                            <template if:true={member.isSelected}>
+                                                                <div class="slds-col slds-no-flex">
+                                                                    <div class="slds-text-body_small slds-text-color_weak">
+                                                                        Amount: <lightning-formatted-number 
+                                                                            value={member.splitAmount} 
+                                                                            format-style="currency"
+                                                                            currency-code="USD">
+                                                                        </lightning-formatted-number>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+
+                                                        <!-- Custom Split Inputs -->
+                                                        <template if:true={member.isSelected}>
+                                                            
+                                                            <!-- Unequal Amount Input -->
+                                                            <template if:true={isUnequalSplit}>
+                                                                <div class="slds-m-top_small">
+                                                                    <lightning-input
+                                                                        type="number"
+                                                                        label="Amount"
+                                                                        value={member.splitAmount}
+                                                                        data-member-id={member.id}
+                                                                        data-field="splitAmount"
+                                                                        onchange={handleCustomSplitChange}
+                                                                        step="0.01"
+                                                                        min="0"
+                                                                        formatter="currency"
+                                                                        variant="label-hidden"
+                                                                    ></lightning-input>
+                                                                </div>
+                                                            </template>
+
+                                                            <!-- Percentage Input -->
+                                                            <template if:true={isPercentageSplit}>
+                                                                <div class="slds-m-top_small">
+                                                                    <lightning-input
+                                                                        type="number"
+                                                                        label="Percentage"
+                                                                        value={member.splitPercentage}
+                                                                        data-member-id={member.id}
+                                                                        data-field="splitPercentage"
+                                                                        onchange={handleCustomSplitChange}
+                                                                        step="0.01"
+                                                                        min="0"
+                                                                        max="100"
+                                                                        variant="label-hidden"
+                                                                    ></lightning-input>
+                                                                </div>
+                                                            </template>
+
+                                                            <!-- Shares Input -->
+                                                            <template if:true={isSharesSplit}>
+                                                                <div class="slds-m-top_small">
+                                                                    <lightning-input
+                                                                        type="number"
+                                                                        label="Shares"
+                                                                        value={member.splitShares}
+                                                                        data-member-id={member.id}
+                                                                        data-field="splitShares"
+                                                                        onchange={handleCustomSplitChange}
+                                                                        step="1"
+                                                                        min="0"
+                                                                        variant="label-hidden"
+                                                                    ></lightning-input>
+                                                                </div>
+                                                            </template>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        
+                                        <template if:true={errors.members}>
+                                            <div class="slds-form-element__help">{errors.members}</div>
+                                        </template>
+                                        <template if:true={errors.splits}>
+                                            <div class="slds-form-element__help">{errors.splits}</div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Split Summary -->
+                            <template if:false={isEqualSplit}>
+                                <div class="slds-box slds-theme_shade slds-p-around_small">
+                                    <h4 class="slds-text-heading_x-small slds-m-bottom_x-small">Split Summary</h4>
+                                    <div class="slds-grid slds-grid_align-spread">
+                                        <div class="slds-col">
+                                            <div class="slds-text-body_small">
+                                                Total Amount: <lightning-formatted-number 
+                                                    value={expenseData.amount} 
+                                                    format-style="currency"
+                                                    currency-code="USD">
+                                                </lightning-formatted-number>
+                                            </div>
+                                        </div>
+                                        <div class="slds-col">
+                                            <div class="slds-text-body_small">
+                                                Split Amount: <lightning-formatted-number 
+                                                    value={totalSplitAmount} 
+                                                    format-style="currency"
+                                                    currency-code="USD">
+                                                </lightning-formatted-number>
+                                            </div>
+                                        </div>
+                                        <template if:true={isPercentageSplit}>
+                                            <div class="slds-col">
+                                                <div class="slds-text-body_small">
+                                                    Total %: {totalSplitPercentage}%
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <template if:false={isPercentageSplit}>
+                                        <div class="slds-m-top_x-small">
+                                            <div class="slds-text-body_small">
+                                                <div class={remainingAmount}>
+                                                Remaining: <lightning-formatted-number 
+                                                    value={remainingAmount} 
+                                                    format-style="currency"
+                                                    currency-code="USD">
+                                                </lightning-formatted-number>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Modal Footer -->
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={handleCancel}>
+                        Cancel
+                    </button>
+                    <button class="slds-button slds-button_brand" 
+                            onclick={handleSave} 
+                            disabled={isLoading}>
+                        {saveButtonLabel}
+                    </button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

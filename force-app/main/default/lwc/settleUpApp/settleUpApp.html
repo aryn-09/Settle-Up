@@ -1,0 +1,235 @@
+<template>
+    <div class="settle-up-app">
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <lightning-icon icon-name="utility:money" size="medium" alternative-text="Settle Up"></lightning-icon>
+                    </div>
+                    <h1 class="app-title">Settle Up</h1>
+                </div>
+                
+                <!-- User Actions -->
+                <template if:true={isLoggedIn}>
+                    <div class="user-menu interactive" onclick={toggleUserMenu}>
+                        <div class="user-avatar">{userInitials}</div>
+                        <span class="user-name">{currentPlayer.name}</span>
+                        <lightning-icon icon-name="utility:chevrondown" size="x-small"></lightning-icon>
+                    </div>
+                </template>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Loading Screen -->
+            <template if:true={showLoading}>
+                <div class="loading-container fade-in">
+                    <div class="loading-spinner"></div>
+                    <p class="loading-text">Loading Settle Up...</p>
+                </div>
+            </template>
+
+            <!-- Authentication Views -->
+            <template if:false={isLoggedIn}>
+                <template if:false={showLoading}>
+                    <div class="auth-container">
+                        <div class="auth-card fade-in">
+                            <div class="logo-icon auth-logo">
+                                <lightning-icon icon-name="utility:money" size="large"></lightning-icon>
+                            </div>
+                            <h2 class="auth-title">Welcome to Settle Up</h2>
+                            <p class="auth-subtitle">Sign in to manage your shared expenses</p>
+                            
+                            <!-- Forgot Password Form -->
+                            <template if:true={showForgotPassword}>
+                                <c-forgot-passwordss onbacktologin={handleBackToLogin}></c-forgot-passwordss>
+                            </template>
+                            
+                            <!-- Login Form -->
+                            <template if:true={showLogin} if:false={showForgotPassword}>
+                                <c-player-login 
+                                    onloginsuccess={handleLoginSuccess}
+                                    onshowregistration={handleShowRegistration}
+                                    onshowforgotpassword={handleShowForgotPassword}>
+                                </c-player-login>
+                            </template>
+                            
+                            <!-- Registration Form -->
+                            <template if:true={showRegistration} if:false={showForgotPassword}>
+                                <c-player-registration 
+                                    onregistrationsuccess={handleRegistrationSuccess}
+                                    onbacktologin={handleBackToLogin}>
+                                </c-player-registration>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </template>
+
+            <!-- Authenticated App Views -->
+            <template if:true={isLoggedIn}>
+                <template if:false={showLoading}>
+                    <!-- Welcome Section -->
+                    <div class="welcome-section slide-up">
+                        <h1 class="welcome-title">Welcome back, {currentPlayer.name}!</h1>
+                        <p class="welcome-subtitle">
+                            Manage your shared expenses, track settlements, and keep your finances organized with friends and family.
+                        </p>
+                    </div>
+
+                    <!-- Navigation Tabs -->
+                    <nav class="nav-tabs fade-in">
+                        <ul class="nav-list">
+                            <li class="nav-item">
+                                <a href="#dashboard" 
+                                   class={dashboardTabClass} 
+                                   onclick={handleTabClick} 
+                                   data-tab="dashboard">
+                                    <lightning-icon icon-name="utility:dashboard" size="x-small" class="nav-icon"></lightning-icon>
+                                    <span>Dashboard</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#groups" 
+                                   class={groupsTabClass} 
+                                   onclick={handleTabClick} 
+                                   data-tab="groups">
+                                    <lightning-icon icon-name="utility:groups" size="x-small" class="nav-icon"></lightning-icon>
+                                    <span>Groups</span>
+                                    <span class="badge">{playerGroups.length}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#expenses" 
+                                   class={expensesTabClass} 
+                                   onclick={handleTabClick} 
+                                   data-tab="expenses">
+                                    <lightning-icon icon-name="utility:currency" size="x-small" class="nav-icon"></lightning-icon>
+                                    <span>Expenses</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#settlements" 
+                                   class={settlementsTabClass} 
+                                   onclick={handleTabClick} 
+                                   data-tab="settlements">
+                                    <lightning-icon icon-name="utility:receipt" size="x-small" class="nav-icon"></lightning-icon>
+                                    <span>Settlements</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <!-- Dashboard Tab -->
+                        <div id="dashboard-tab" class={dashboardContentClass}>
+                            <template if:true={isDashboardActive}>
+                                <c-group-dashboard 
+                                    session-token={sessionToken}
+                                    current-player={currentPlayer}
+                                    player-groups={playerGroups}
+                                    onviewgroup={handleViewGroup}
+                                    oncreategroup={handleCreateGroup}
+                                    onjoingroup={handleJoinGroup}
+                                    class="card-hover interactive">
+                                </c-group-dashboard>
+                            </template>
+                        </div>
+
+                        <!-- Groups Tab -->
+                        <div id="groups-tab" class={groupsContentClass}>
+                            <template if:true={isGroupsActive}>
+                                <template if:true={showGroupDetail}>
+                                    <c-group-detail 
+                                        session-token={sessionToken}
+                                        group-id={selectedGroupId}
+                                        current-player={currentPlayer}
+                                        onbacktogroups={handleBackToGroups}
+                                        onaddexpense={handleAddExpense}
+                                        onviewsettlements={handleViewSettlements}
+                                        class="card-hover interactive">
+                                    </c-group-detail>
+                                </template>
+                                <template if:false={showGroupDetail}>
+                                    <c-group-dashboard 
+                                        session-token={sessionToken}
+                                        current-player={currentPlayer}
+                                        player-groups={playerGroups}
+                                        onviewgroup={handleViewGroup}
+                                        oncreategroup={handleCreateGroup}
+                                        onjoingroup={handleJoinGroup}
+                                        class="card-hover interactive">
+                                    </c-group-dashboard>
+                                </template>
+                            </template>
+                        </div>
+
+                        <!-- Expenses Tab -->
+                        <div id="expenses-tab" class={expensesContentClass}>
+                            <template if:true={isExpensesActive}>
+                                <template if:true={showExpenseForm}>
+                                    <c-expense-form 
+                                        session-token={sessionToken}
+                                        group-id={selectedGroupId}
+                                        current-player={currentPlayer}
+                                        onexpenseadded={handleExpenseAdded}
+                                        oncancel={handleCancelExpense}
+                                        class="card-hover interactive">
+                                    </c-expense-form>
+                                </template>
+                                <template if:false={showExpenseForm}>
+                                    <div class="empty-state fade-in">
+                                        <div class="empty-icon">
+                                            <lightning-icon icon-name="utility:currency" size="large"></lightning-icon>
+                                        </div>
+                                        <h3 class="empty-title">Expense Management</h3>
+                                        <p class="empty-description">
+                                            Add expenses through group details or use the expense form to track your shared costs.
+                                        </p>
+                                        <lightning-button 
+                                            variant="brand" 
+                                            label="Add New Expense" 
+                                            onclick={handleAddExpense}
+                                            class="btn-modern interactive">
+                                        </lightning-button>
+                                    </div>
+                                </template>
+                            </template>
+                        </div>
+
+                        <!-- Settlements Tab -->
+                        <div id="settlements-tab" class={settlementsContentClass}>
+                            <template if:true={isSettlementsActive}>
+                                <c-settlement-manager 
+                                    session-token={sessionToken}
+                                    current-player={currentPlayer}
+                                    selected-group-id={selectedGroupId}
+                                    onsettlementcreated={handleSettlementCreated}
+                                    class="card-hover interactive">
+                                </c-settlement-manager>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </template>
+        </main>
+
+        <!-- Floating Action Button -->
+        <template if:true={isLoggedIn}>
+            <button 
+                class="fab" 
+                onclick={showQuickAction}
+                title="Quick Action">
+                <lightning-icon icon-name="utility:add" size="medium" alternative-text="Quick Action"></lightning-icon>
+            </button>
+        </template>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p class="footer-text">Settle Up © 2024 | Expense Sharing Made Easy</p>
+        </footer>
+    </div>
+</template>

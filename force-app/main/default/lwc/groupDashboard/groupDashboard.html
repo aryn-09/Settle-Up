@@ -1,0 +1,294 @@
+<template>
+    <div class="dashboard-container">
+        <!-- Header Section -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">My Groups</h1>
+                <div class="header-actions">
+                    <lightning-button
+                        variant="neutral"
+                        label="Refresh"
+                        icon-name="utility:refresh"
+                        onclick={handleRefresh}
+                        disabled={isLoading}>
+                    </lightning-button>
+                    <lightning-button
+                        variant="brand-outline"
+                        label="Join Group"
+                        icon-name="utility:add"
+                        onclick={handleJoinGroup}
+                        disabled={isLoading}>
+                    </lightning-button>
+                    <lightning-button
+                        variant="brand"
+                        label="Create Group"
+                        icon-name="utility:new"
+                        onclick={handleCreateGroup}
+                        disabled={isLoading}>
+                    </lightning-button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <template if:true={isLoading}>
+            <div class="loading-container">
+                <lightning-spinner alternative-text="Loading groups..."></lightning-spinner>
+            </div>
+        </template>
+        <!-- Groups List -->
+        <template if:true={hasGroups}>
+            <div class="groups-grid">
+                <template for:each={groups} for:item="group">
+                    <div key={group.Id} 
+                         class="group-card" 
+                         data-group-id={group.Id}
+                         onclick={handleGroupClick}>
+                        
+                        <!-- Group Header -->
+                        <div class="group-header">
+                            <div class="group-avatar">
+                                <template if:true={group.Group_Image__c}>
+                                    <img src={group.Group_Image__c} alt="Group Image" class="group-image">
+                                </template>
+                                <template if:false={group.Group_Image__c}>
+                                    <div class="group-placeholder">
+                                        <lightning-icon icon-name="standard:groups" size="large"></lightning-icon>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="group-info">
+                                <h3 class="group-name">{group.Name}</h3>
+                                <p class="group-description">{group.Description__c}</p>
+                            </div>
+                            <div class={group.statusClass}>
+                                <span class="status-badge">{group.Status__c}</span>
+                            </div>
+                        </div>
+
+                        <!-- Group Stats -->
+                        <div class="group-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Expenses</span>
+                                <span class="stat-value expense-amount">{group.formattedTotalExpenses}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Members</span>
+                                <span class="stat-value">{group.memberCountText}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Last Activity</span>
+                                <span class="stat-value">{group.lastActivityText}</span>
+                            </div>
+                        </div>
+
+                        <!-- Group Actions -->
+                        <div class="group-actions">
+                            <lightning-button-icon
+                                icon-name="utility:share"
+                                variant="border-filled"
+                                alternative-text="Share Group"
+                                title="Share Group Code"
+                                size="small"
+                                onclick={handleShareGroupCode}
+                                data-group-id={group.Id}
+                                data-group-code={group.groupCode}>
+                            </lightning-button-icon>
+                            <lightning-button-icon
+                                icon-name="utility:settings"
+                                variant="border-filled"
+                                alternative-text="Group Settings"
+                                title="Group Settings"
+                                size="small">
+                            </lightning-button-icon>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- Empty State -->
+        <template if:false={hasGroups}>
+            <div class="empty-state">
+                <div class="empty-state-content">
+                    <lightning-icon icon-name="custom:custom19" size="large" class="empty-icon"></lightning-icon>
+                    <h2 class="empty-title">No Groups Yet</h2>
+                    <p class="empty-message">{emptyStateMessage}</p>
+                    <div class="empty-actions">
+                        <lightning-button
+                            variant="brand"
+                            label="Create Your First Group"
+                            onclick={handleCreateGroup}
+                            class="empty-button">
+                        </lightning-button>
+                        <lightning-button
+                            variant="neutral"
+                            label="Join Existing Group"
+                            onclick={handleJoinGroup}
+                            class="empty-button">
+                        </lightning-button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Create Group Modal -->
+        <template if:true={showCreateModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                                title="Close" onclick={handleCloseCreateModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-modal__title">{createModalTitle}</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-form">
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="group-name">
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Group Name
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <input type="text" 
+                                           id="group-name"
+                                           class="slds-input" 
+                                           placeholder="Enter group name"
+                                           value={createGroupForm.name}
+                                           data-field="name"
+                                           onchange={handleCreateFormChange}
+                                           maxlength="255"
+                                           required />
+                                </div>
+                            </div>
+                            
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="group-description">
+                                    Description
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <textarea id="group-description"
+                                              class="slds-textarea" 
+                                              placeholder="Optional description"
+                                              value={createGroupForm.description}
+                                              data-field="description"
+                                              onchange={handleCreateFormChange}
+                                              maxlength="1000">
+                                    </textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="group-currency">
+                                    Currency
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <lightning-combobox
+                                        name="currency"
+                                        label=""
+                                        value={createGroupForm.currency}
+                                        placeholder="Select Currency"
+                                        options={currencyOptions}
+                                        data-field="currency"
+                                        onchange={handleCreateFormChange}>
+                                    </lightning-combobox>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={handleCloseCreateModal}>
+                            Cancel
+                        </button>
+                        <button class="slds-button slds-button_brand" 
+                                onclick={handleCreateSubmit}
+                                disabled={isLoading}>
+                            Create Group
+                        </button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Join Group Modal -->
+        <template if:true={showJoinModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                                title="Close" onclick={handleCloseJoinModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-modal__title">{joinModalTitle}</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-form">
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="group-code">
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Group Code
+                                </label>
+                                <div class="slds-form-element__control">
+                                    <input type="text" 
+                                           id="group-code"
+                                           class="slds-input" 
+                                           placeholder="Enter group code (e.g., RM2024XY)"
+                                           value={joinGroupForm.groupCode}
+                                           onchange={handleJoinFormChange}
+                                           maxlength="10"
+                                           style="text-transform: uppercase;"
+                                           required />
+                                </div>
+                                <div class="slds-form-element__help">
+                                    Ask a group member for the group code to join
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={handleCloseJoinModal}>
+                            Cancel
+                        </button>
+                        <button class="slds-button slds-button_brand" 
+                                onclick={handleJoinSubmit}
+                                disabled={isLoading}>
+                            Join Group
+                        </button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Group Code Modal -->
+        <template if:true={showGroupCodeModal}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                                title="Close" onclick={handleCloseGroupCodeModal}>
+                            <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                        </button>
+                        <h2 class="slds-modal__title">Group Code</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <div class="slds-align_absolute-center">
+                            <h3>Your Group Code:</h3>
+                            <div class="slds-text-heading_large slds-m-vertical_medium" style="font-weight:bold; letter-spacing:2px;">
+                                {selectedGroupCode}
+                            </div>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={handleCloseGroupCodeModal}>
+                            Close
+                        </button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
+</template>

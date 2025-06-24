@@ -1,0 +1,46 @@
+.summary-chart {
+    width: 100% !important;
+    min-height: 300px;
+    max-height: 400px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(99,102,241,0.10), 0 1.5px 4px rgba(0,0,0,0.04);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: box-shadow 0.3s;
+}
+
+.slds-card {
+    min-height: 350px;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(99,102,241,0.07), 0 1.5px 4px rgba(0,0,0,0.03);
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    margin-bottom: 1.5rem;
+}
+
+.slds-card__header {
+    border-radius: 18px 18px 0 0;
+    background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+    color: #fff;
+    padding: 1rem 1.5rem 0.5rem 1.5rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.slds-card__body {
+    padding: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .slds-card {
+        min-height: 250px;
+    }
+    .summary-chart {
+        min-height: 200px;
+        max-height: 250px;
+        padding: 0.5rem;
+    }
+    .slds-card__body {
+        padding: 0.75rem;
+    }
+}

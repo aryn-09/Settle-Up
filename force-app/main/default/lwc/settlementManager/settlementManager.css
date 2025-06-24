@@ -1,0 +1,24 @@
+.settlement-card {
+    border-left: 4px solid #f59e0b;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.settlement-card:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.confirmed-settlements {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.slds-modal__container {
+    max-width: 600px;
+}
+
+@media (max-width: 768px) {
+    .slds-modal__container {
+        max-width: 95vw;
+        margin: 1rem;
+    }
+}

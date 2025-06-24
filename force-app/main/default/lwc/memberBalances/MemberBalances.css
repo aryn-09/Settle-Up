@@ -1,0 +1,278 @@
+/* Member Balances Component Styles */
+
+/* Summary Cards */
+.summary-card {
+    background: #f3f3f3;
+    border-radius: 8px;
+    border: 1px solid #e0e5ee;
+    transition: all 0.2s ease;
+}
+
+.summary-card:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Member Cards */
+.member-card {
+    border-radius: 12px;
+    border: 2px solid #e0e5ee;
+    transition: all 0.3s ease;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+}
+
+.member-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Current Player Highlighting */
+.member-card.current-player {
+    border-color: #1589ee;
+    background: linear-gradient(135deg, #f6f9ff 0%, #ffffff 100%);
+}
+
+.member-card.current-player::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1589ee, #0176d3);
+}
+
+/* Balance Status Colors */
+.member-card.owed-money {
+    border-left: 4px solid #04844b;
+}
+
+.member-card.owes-money {
+    border-left: 4px solid #ea001e;
+}
+
+.member-card.settled {
+    border-left: 4px solid #706e6b;
+}
+
+/* Balance Amount Styling */
+.balance-amount {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.balance-amount.success {
+    color: #04844b;
+}
+
+.balance-amount.error {
+    color: #ea001e;
+}
+
+.balance-amount.neutral {
+    color: #706e6b;
+}
+
+.balance-prefix {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+/* Balance Details */
+.balance-detail {
+    text-align: center;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e0e5ee;
+}
+
+/* Settlement Cards */
+.settlement-card {
+    background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+    border: 1px solid #0176d3;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.settlement-card:hover {
+    box-shadow: 0 2px 8px rgba(1, 118, 211, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .member-card {
+        margin-bottom: 1rem;
+    }
+    
+    .slds-col.slds-size_1-of-2.slds-large-size_1-of-3 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    .summary-card {
+        margin-bottom: 0.5rem;
+    }
+    
+    .slds-grid.slds-wrap.slds-gutters .slds-col {
+        padding: 0.25rem;
+    }
+}
+
+/* Animation for balance changes */
+@keyframes balanceUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.balance-amount.updated {
+    animation: balanceUpdate 0.5s ease-in-out;
+}
+
+/* Loading State */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 100;
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.status-badge.owes {
+    background: #fee;
+    color: #ea001e;
+    border: 1px solid #fbb;
+}
+
+.status-badge.owed {
+    background: #efe;
+    color: #04844b;
+    border: 1px solid #bfb;
+}
+
+.status-badge.settled {
+    background: #f5f5f5;
+    color: #706e6b;
+    border: 1px solid #ddd;
+}
+
+/* Button Variations */
+.settle-button {
+    background: linear-gradient(135deg, #04844b 0%, #057a43 100%);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.settle-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(4, 132, 75, 0.3);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    opacity: 0.7;
+}
+
+.empty-state lightning-icon {
+    opacity: 0.4;
+}
+
+/* Filter Section */
+.filter-section {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid #e0e5ee;
+}
+
+/* Modal Enhancements */
+.slds-modal__content {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Accessibility Improvements */
+.member-card:focus-within {
+    outline: 2px solid #1589ee;
+    outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+    .member-card {
+        break-inside: avoid;
+        border: 1px solid #000;
+        box-shadow: none;
+    }
+    
+    .settle-button,
+    lightning-button {
+        display: none;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .member-card {
+        background: #2a2a2a;
+        border-color: #444;
+        color: #fff;
+    }
+    
+    .summary-card {
+        background: #333;
+        border-color: #555;
+        color: #fff;
+    }
+    
+    .balance-detail {
+        background: #333;
+        border-color: #555;
+        color: #fff;
+    }
+    
+    .settlement-card {
+        background: #2a2a2a;
+        border-color: #444;
+        color: #fff;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .member-card {
+        border-width: 3px;
+    }
+    
+    .balance-amount {
+        font-weight: 900;
+    }
+    
+    .status-badge {
+        border-width: 2px;
+    }
+}

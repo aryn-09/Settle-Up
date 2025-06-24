@@ -1,0 +1,235 @@
+<template>
+    <lightning-card title="Member Balances" icon-name="standard:groups">
+        <!-- Loading Spinner -->
+        <div if:true={isLoading} class="slds-is-relative">
+            <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+        </div>
+
+        <!-- Header Section with Summary and Controls -->
+        <div slot="actions" class="slds-button-group">
+            <lightning-button 
+                variant="neutral" 
+                label="Refresh" 
+                icon-name="utility:refresh"
+                onclick={handleRefresh}>
+            </lightning-button>
+        </div>
+
+        <div class="slds-card__body slds-card__body_inner">
+            <!-- Group Summary -->
+            <div class="slds-grid slds-wrap slds-gutters slds-m-bottom_large">
+                <div class="slds-col slds-size_1-of-3">
+                    <div class="summary-card slds-text-align_center slds-p-around_medium">
+                        <div class="slds-text-heading_large slds-text-color_success">
+                            {groupSummary.totalExpenses}
+                        </div>
+                        <div class="slds-text-body_small slds-text-color_weak">
+                            Total Expenses
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                    <div class="summary-card slds-text-align_center slds-p-around_medium">
+                        <div class="slds-text-heading_large slds-text-color_error">
+                            {groupSummary.totalOutstanding}
+                        </div>
+                        <div class="slds-text-body_small slds-text-color_weak">
+                            Outstanding Balance
+                        </div>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                    <div class="summary-card slds-text-align_center slds-p-around_medium">
+                        <div class="slds-text-heading_large">
+                            {groupSummary.memberCount}
+                        </div>
+                        <div class="slds-text-body_small slds-text-color_weak">
+                            Members
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter and Sort Controls -->
+            <div class="slds-grid slds-wrap slds-gutters slds-m-bottom_medium">
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning-combobox
+                        name="balanceFilter"
+                        label="Filter by"
+                        value={balanceFilter}
+                        placeholder="Select filter"
+                        options={filterOptions}
+                        onchange={handleFilterChange}>
+                    </lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning-combobox
+                        name="sortBy"
+                        label="Sort by"
+                        value={sortBy}
+                        placeholder="Select sort option"
+                        options={sortOptions}
+                        onchange={handleSortChange}>
+                    </lightning-combobox>
+                </div>
+            </div>
+
+            <!-- Member Balance Cards -->
+            <div class="slds-grid slds-wrap slds-gutters">
+                <template for:each={filteredMembers} for:item="member">
+                    <div key={member.id} class="slds-col slds-size_1-of-2 slds-large-size_1-of-3">
+                        <div class={member.cardClass}>
+                            <!-- Member Header -->
+                            <div class="slds-media">
+                                <div class="slds-media__figure">
+                                    <lightning-avatar
+                                        src={member.avatarUrl}
+                                        fallback-icon-name="standard:person_account"
+                                        alternative-text={member.name}
+                                        size="medium">
+                                    </lightning-avatar>
+                                </div>
+                                <div class="slds-media__body">
+                                    <div class="slds-grid slds-grid_align-spread">
+                                        <div>
+                                            <h3 class="slds-text-heading_small">
+                                                {member.name}
+                                                <span if:true={member.isCurrentPlayer} 
+                                                      class="slds-badge slds-theme_success slds-m-left_xx-small">
+                                                    You
+                                                </span>
+                                            </h3>
+                                            <p class="slds-text-body_small slds-text-color_weak">
+                                                {member.nickname}
+                                            </p>
+                                        </div>
+                                        <div class="slds-text-align_right">
+                                            <div class={member.balanceClass}>
+                                                <template if:true={member.netBalance}>
+                                                    <span if:true={member.balanceType} class="balance-prefix">
+                                                        <template if:true={member.isOwed}>+</template>
+                                                        <template if:true={member.owes}>-</template>
+                                                    </span>
+                                                </template>
+                                                {member.formattedBalance}
+                                            </div>
+                                            <div class="slds-text-body_small slds-text-color_weak">
+                                                <template if:true={member.netBalance}>
+                                                    <span if:true={member.isOwed}>gets back</span>
+                                                    <span if:true={member.owes}>owes</span>
+                                                    <span if:true={member.isSettled}>settled up</span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Balance Details -->
+                            <div class="slds-grid slds-wrap slds-gutters slds-m-top_small">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <div class="balance-detail">
+                                        <div class="slds-text-body_small slds-text-color_weak">Paid</div>
+                                        <div class="slds-text-body_regular slds-text-color_success">
+                                            {member.formattedPaid}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <div class="balance-detail">
+                                        <div class="slds-text-body_small slds-text-color_weak">Share</div>
+                                        <div class="slds-text-body_regular">
+                                            {member.formattedOwed}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="slds-m-top_small">
+                                <template if:true={member.owes}>
+                                    <lightning-button
+                                        variant="brand"
+                                        label="Settle Up"
+                                        icon-name="utility:money"
+                                        size="small"
+                                        data-member-id={member.id}
+                                        onclick={handleSettleUp}
+                                        class="slds-m-right_xx-small">
+                                    </lightning-button>
+                                </template>
+                                
+                                <lightning-button
+                                    variant="neutral"
+                                    label="View Details"
+                                    icon-name="utility:preview"
+                                    size="small"
+                                    data-member-id={member.id}
+                                    onclick={handleViewDetails}>
+                                </lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty State -->
+            <template if:false={filteredMembers.length}>
+                <div class="slds-illustration slds-illustration_small slds-text-align_center">
+                    <div class="slds-m-top_large slds-m-bottom_large">
+                        <h3 class="slds-text-heading_medium">No members match your filter</h3>
+                        <p class="slds-text-body_regular">Try adjusting your filter or sort options.</p>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Optimal Settlements Section -->
+            <template if:true={hasSettlements}>
+                <div class="slds-section slds-is-open slds-m-top_large">
+                    <h3 class="slds-section__title slds-theme_shade">
+                        <span class="slds-truncate slds-p-horizontal_small" title="Recommended Settlements">
+                            <lightning-icon icon-name="utility:chart" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                            Recommended Settlements
+                        </span>
+                    </h3>
+                    <div class="slds-section__content">
+                        <div class="slds-grid slds-wrap slds-gutters">
+                            <template for:each={settlements} for:item="settlement">
+                                <div key={settlement.id} class="slds-col slds-size_1-of-1">
+                                    <div class="settlement-card slds-card slds-p-around_medium slds-m-bottom_small">
+                                        <div class="slds-media">
+                                            <div class="slds-media__figure">
+                                                <lightning-icon icon-name="utility:forward" size="small"></lightning-icon>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <div class="slds-grid slds-grid_align-spread">
+                                                    <div>
+                                                        <strong>{settlement.fromPlayerName}</strong> pays 
+                                                        <strong>{settlement.toPlayerName}</strong>
+                                                    </div>
+                                                    <div class="slds-text-heading_small slds-text-color_success">
+                                                        {settlement.formattedAmount}
+                                                    </div>
+                                                </div>
+                                                <div class="slds-m-top_x-small">
+                                                    <lightning-button
+                                                        variant="success"
+                                                        label="Create Settlement"
+                                                        size="small"
+                                                        data-settlement-id={settlement.id}
+                                                        onclick={handleSettlementAction}
+                                                        data-action="create">
+                                                    </lightning-button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

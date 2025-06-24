@@ -1,0 +1,253 @@
+<template>
+    <div class="slds-card registration-container">
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning-icon icon-name="standard:user" alternative-text="User Registration" title="User Registration"></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                        <span class="slds-text-heading_small">Create Your Account</span>
+                    </h2>
+                </div>
+            </header>
+        </div>
+        
+        <div class="slds-card__body slds-card__body_inner">
+            <!-- Success Message -->
+            <template if:true={showSuccess}>
+                <div class="slds-notify slds-notify_alert slds-theme_success" role="alert">
+                    <span class="slds-assistive-text">Success</span>
+                    <lightning-icon icon-name="utility:success" alternative-text="Success" title="Success" size="x-small"></lightning-icon>
+                    <h2>Registration Successful!</h2>
+                    <p>Your account has been created. You can now login with your email address.</p>
+                </div>
+            </template>
+
+            <!-- Registration Form -->
+            <template if:false={showSuccess}>
+                <form onsubmit={handleRegister}>
+                    <!-- Name Field -->
+                    <div class="slds-form-element slds-m-bottom_medium">
+                        <label class="slds-form-element__label" for="name-input">
+                            <abbr class="slds-required" title="required">*</abbr>
+                            Full Name
+                        </label>
+                        <div class="slds-form-element__control">
+                            <input 
+                                type="text" 
+                                id="name-input" 
+                                name="name"
+                                class={nameInputClass}
+                                placeholder="Enter your full name"
+                                value={formData.name}
+                                onchange={handleInputChange}
+                                maxlength="255"
+                                required
+                            />
+                            <template if:true={errors.name}>
+                                <div class="slds-form-element__help slds-text-color_error">
+                                    {errors.name}
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="slds-form-element slds-m-bottom_medium">
+                        <label class="slds-form-element__label" for="email-input">
+                            <abbr class="slds-required" title="required">*</abbr>
+                            Email Address
+                        </label>
+                        <div class="slds-form-element__control">
+                            <input 
+                                type="email" 
+                                id="email-input" 
+                                name="email"
+                                class={emailInputClass}
+                                placeholder="Enter your email address"
+                                value={formData.email}
+                                onchange={handleInputChange}
+                                maxlength="255"
+                                required
+                            />
+                            <template if:true={errors.email}>
+                                <div class="slds-form-element__help slds-text-color_error">
+                                    {errors.email}
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Phone Field -->
+                    <div class="slds-form-element slds-m-bottom_medium">
+                        <label class="slds-form-element__label" for="phone-input">
+                            <abbr class="slds-required" title="required">*</abbr>
+                            Phone Number
+                        </label>
+                        <div class="slds-form-element__control">
+                            <input 
+                                type="tel" 
+                                id="phone-input" 
+                                name="phone"
+                                class={phoneInputClass}
+                                placeholder="Enter your phone number"
+                                value={formData.phone}
+                                onchange={handleInputChange}
+                                maxlength="20"
+                                required
+                            />
+                            <template if:true={errors.phone}>
+                                <div class="slds-form-element__help slds-text-color_error">
+                                    {errors.phone}
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="slds-form-element slds-m-bottom_medium">
+                        <label class="slds-form-element__label" for="password-input">
+                            <abbr class="slds-required" title="required">*</abbr>
+                            Password
+                        </label>
+                        <div class="slds-form-element__control">
+                            <input 
+                                type="password" 
+                                id="password-input" 
+                                name="password"
+                                class={passwordInputClass}
+                                placeholder="Create a password"
+                                value={formData.password}
+                                onchange={handleInputChange}
+                                maxlength="100"
+                                required
+                            />
+                            <template if:true={errors.password}>
+                                <div class="slds-form-element__help slds-text-color_error">
+                                    {errors.password}
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password Field -->
+                    <div class="slds-form-element slds-m-bottom_medium">
+                        <label class="slds-form-element__label" for="confirm-password-input">
+                            <abbr class="slds-required" title="required">*</abbr>
+                            Confirm Password
+                        </label>
+                        <div class="slds-form-element__control">
+                            <input 
+                                type="password" 
+                                id="confirm-password-input" 
+                                name="confirmPassword"
+                                class={confirmPasswordInputClass}
+                                placeholder="Re-enter your password"
+                                value={formData.confirmPassword}
+                                onchange={handleInputChange}
+                                maxlength="100"
+                                required
+                            />
+                            <template if:true={errors.confirmPassword}>
+                                <div class="slds-form-element__help slds-text-color_error">
+                                    {errors.confirmPassword}
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Security Question Field -->
+                    <div class="slds-form-element slds-m-bottom_medium">
+                        <label class="slds-form-element__label" for="security-question-input">
+                            <abbr class="slds-required" title="required">*</abbr>
+                            Security Question
+                        </label>
+                        <div class="slds-form-element__control">
+                            <input 
+                                type="text" 
+                                id="security-question-input" 
+                                name="securityQuestion"
+                                class={securityQuestionInputClass}
+                                placeholder="Enter a security question (e.g., What is your pet's name?)"
+                                value={formData.securityQuestion}
+                                onchange={handleInputChange}
+                                maxlength="255"
+                                required
+                            />
+                            <template if:true={errors.securityQuestion}>
+                                <div class="slds-form-element__help slds-text-color_error">
+                                    {errors.securityQuestion}
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Security Answer Field -->
+                    <div class="slds-form-element slds-m-bottom_medium">
+                        <label class="slds-form-element__label" for="security-answer-input">
+                            <abbr class="slds-required" title="required">*</abbr>
+                            Security Answer
+                        </label>
+                        <div class="slds-form-element__control">
+                            <input 
+                                type="password" 
+                                id="security-answer-input" 
+                                name="securityAnswer"
+                                class={securityAnswerInputClass}
+                                placeholder="Enter your answer"
+                                value={formData.securityAnswer}
+                                onchange={handleInputChange}
+                                maxlength="100"
+                                required
+                            />
+                            <template if:true={errors.securityAnswer}>
+                                <div class="slds-form-element__help slds-text-color_error">
+                                    {errors.securityAnswer}
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="slds-form-element slds-m-top_large">
+                        <div class="slds-form-element__control">
+                            <lightning-button 
+                                variant="brand" 
+                                type="submit" 
+                                label="Create Account"
+                                onclick={handleRegister}
+                                disabled={isLoading}
+                                class="slds-m-right_small"
+                            ></lightning-button>
+                            
+                            <lightning-button 
+                                variant="neutral" 
+                                label="Back to Login"
+                                onclick={handleBackToLogin}
+                                disabled={isLoading}
+                            ></lightning-button>
+                        </div>
+                    </div>
+
+                    <!-- Loading Spinner -->
+                    <template if:true={isLoading}>
+                        <div class="slds-spinner_container">
+                            <div role="status" class="slds-spinner slds-spinner_medium">
+                                <span class="slds-assistive-text">Loading...</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </template>
+                </form>
+            </template>
+        </div>
+
+        <div class="slds-card__footer">
+            <p class="slds-text-body_small slds-text-color_weak">
+                By creating an account, you agree to our terms of service and privacy policy.
+            </p>
+        </div>
+    </div>
+</template>

@@ -1,0 +1,173 @@
+.slds-modal__container {
+    max-width: 600px;
+}
+
+.slds-tabs_default__content {
+    min-height: 400px;
+}
+
+.expense-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.expense-item:hover {
+    background-color: #f3f3f3;
+}
+
+.expense-item:active {
+    background-color: #e5e5e5;
+}
+
+.balance-positive {
+    color: var(--slds-g-color-success-base-50);
+}
+
+.balance-negative {
+    color: var(--slds-g-color-error-base-50);
+}
+
+.balance-zero {
+    color: var(--slds-g-color-neutral-base-50);
+}
+
+.settlement-pending {
+    border-left: 3px solid var(--slds-g-color-warning-base-50);
+}
+
+.settlement-confirmed {
+    border-left: 3px solid var(--slds-g-color-success-base-50);
+}
+
+.member-card {
+    transition: transform 0.2s ease;
+}
+
+.member-card:hover {
+    transform: translateY(-2px);
+}
+
+.group-stats {
+    background: linear-gradient(135deg, var(--slds-g-color-brand-base-20) 0%, var(--slds-g-color-brand-base-10) 100%);
+    border-radius: 4px;
+}
+
+.slds-modal_large .slds-modal__container {
+    max-width: 80rem;
+    width: 80%;
+}
+
+.expense-split-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #dddbda;
+}
+
+.expense-split-item:last-child {
+    border-bottom: none;
+}
+
+.expense-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .expense-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Settlement Styles */
+.settlement-summary {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.settlement-item {
+    border-left: 4px solid #28a745;
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.settlement-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.settlement-arrow {
+    color: #6c757d;
+    margin: 0 0.5rem;
+}
+
+.creditor-section {
+    border-left: 4px solid #28a745;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+
+.debtor-section {
+    border-left: 4px solid #dc3545;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+
+.balance-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.balance-summary-item {
+    text-align: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.settlement-number {
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.no-settlements {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.no-settlements lightning-icon {
+    margin-bottom: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .balance-summary-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .balance-summary-item {
+        padding: 0.5rem;
+    }
+    
+    .settlement-item {
+        padding: 0.5rem;
+    }
+}

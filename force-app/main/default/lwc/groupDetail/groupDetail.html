@@ -1,0 +1,1044 @@
+<template>
+    <div class="slds-card">
+        <!-- Group Header -->
+        <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                <div class="slds-media__figure">
+                    <lightning-icon icon-name="utility:groups" alternative-text="Group" 
+                                    title="Group" size="large"></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                    <h2 class="slds-card__header-title">
+                        <span class="slds-text-heading_medium">{groupData.name}</span>
+                    </h2>
+                    <p class="slds-text-body_small slds-text-color_weak">
+                        {groupData.description}
+                    </p>
+                    <div class="slds-grid slds-gutters slds-wrap">
+                        <div class="slds-col slds-size_1-of-3">
+                            <span class="slds-text-body_small">Members: {groupData.memberCount}</span>
+                        </div>
+                        <div class="slds-col slds-size_1-of-3">
+                            <span class="slds-text-body_small">Total Expenses: {totalExpenses}</span>
+                        </div>
+                        <div class="slds-col slds-size_1-of-3">
+                            <span class="slds-text-body_small">Currency: {groupData.currency}</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="slds-no-flex">
+                <lightning-button-group>
+                    <lightning-button variant="brand" label="Add Expense" 
+                                    onclick={openExpenseModal}></lightning-button>
+                    <lightning-button variant="neutral" label="Settle Up" 
+                                    onclick={openSettlementModal}></lightning-button>
+                    <lightning-button variant="neutral" label="Members" 
+                                    onclick={openMemberModal}></lightning-button>
+                </lightning-button-group>
+                <lightning-button variant="outline" label="Back to Dashboard" class="slds-m-left_small" onclick={navigateToMainDashboard}></lightning-button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <template if:true={isLoading}>
+            <div class="slds-spinner_container">
+                <div role="status" class="slds-spinner slds-spinner_medium">
+                    <span class="slds-assistive-text">Loading</span>
+                    <div class="slds-spinner__dot-a"></div>
+                    <div class="slds-spinner__dot-b"></div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Error Message -->
+        <template if:true={error}>
+            <div class="slds-card__body slds-card__body_inner">
+                <div class="slds-notify slds-notify_alert slds-theme_error">
+                    <span class="slds-assistive-text">Error</span>
+                    <h2>{error}</h2>
+                    <lightning-button variant="neutral" label="Retry" onclick={refreshSessionAndLoad} class="slds-m-left_small"></lightning-button>
+                </div>
+            </div>
+        </template>
+
+        <!-- Main Content -->
+        <template if:false={isLoading}>
+            <template if:false={error}>
+                <div class="slds-card__body slds-card__body_inner slds-p-around_none">
+                    <!-- Tabs -->
+                    <div class="slds-tabs_default">
+                        <ul class="slds-tabs_default__nav" role="tablist">
+                            <li class={tabClasses.expenses} title="Expenses" role="presentation">
+                                <a class="slds-tabs_default__link" href="#tab-expenses" role="tab" 
+                                   data-tab="expenses" onclick={handleTabClick}>Expenses</a>
+                            </li>
+                            <li class={tabClasses.balances} title="Balances" role="presentation">
+                                <a class="slds-tabs_default__link" href="#tab-balances" role="tab" 
+                                   data-tab="balances" onclick={handleTabClick}>Balances</a>
+                            </li>
+                            <li class={tabClasses.settlements} title="Settlements" role="presentation">
+                                <a class="slds-tabs_default__link" href="#tab-settlements" role="tab" 
+                                   data-tab="settlements" onclick={handleTabClick}>Settlements</a>
+                            </li>
+                            <li class={tabClasses.summary} title="Summary" role="presentation">
+                                <a class="slds-tabs_default__link" href="#tab-summary" role="tab" 
+                                   data-tab="summary" onclick={handleTabClick}>Summary</a>
+                            </li>
+                        </ul>
+
+                        <!-- Expenses Tab -->
+                        <div id="tab-expenses" class={tabContentClasses.expenses} role="tabpanel">
+                            <div class="slds-p-around_medium">
+                                <template if:true={expenses.length}>
+                                    <template for:each={expenses} for:item="expense">
+                                        <div key={expense.id} class="slds-media slds-border_bottom slds-p-vertical_medium expense-item" 
+                                             onclick={handleExpenseClick} data-expense-id={expense.id}>
+                                            <div class="slds-media__figure">
+                                                <lightning-icon icon-name={expense.categoryIcon} 
+                                                              alternative-text={expense.category} 
+                                                              size="medium"></lightning-icon>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-size_1-of-2">
+                                                        <h3 class="slds-text-heading_small">{expense.name}</h3>
+                                                        <p class="slds-text-body_small slds-text-color_weak">
+                                                            Paid by {expense.paidByName} • {expense.formattedDate}
+                                                        </p>
+                                                        <template if:true={expense.notes}>
+                                                            <p class="slds-text-body_small">{expense.notes}</p>
+                                                        </template>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-4 slds-text-align_center">
+                                                        <p class="slds-text-body_small slds-text-color_weak">Category</p>
+                                                        <p class="slds-text-body_regular">{expense.category}</p>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-4 slds-text-align_right">
+                                                        <p class="slds-text-heading_medium">{expense.formattedAmount}</p>
+                                                        <lightning-button-icon variant="border-filled" 
+                                                                             icon-name="utility:delete" 
+                                                                             alternative-text="Remove" 
+                                                                             title="Remove Expense"
+                                                                             data-expense-id={expense.id}
+                                                                             onclick={handleRemoveExpense}
+                                                                             size="small"></lightning-button-icon>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:false={expenses.length}>
+                                    <div class="slds-illustration slds-illustration_small">
+                                        <div class="slds-text-align_center slds-p-vertical_large">
+                                            <lightning-icon icon-name="utility:receipt" size="large" 
+                                                          alternative-text="No expenses"></lightning-icon>
+                                            <h3 class="slds-text-heading_medium slds-p-top_medium">No expenses yet</h3>
+                                            <p class="slds-text-body_regular">Add your first expense to get started</p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Balances Tab -->
+                        <div id="tab-balances" class={tabContentClasses.balances} role="tabpanel">
+                            <div class="slds-p-around_medium">
+                                <!-- Debug: Show raw balances data -->
+                                <pre>{balancesJson}</pre>
+                                <template if:true={formattedBalances.length}>
+                                    <div class="slds-grid slds-gutters slds-wrap">
+                                        <template for:each={formattedBalances} for:item="balance">
+                                            <div key={balance.playerId} class="slds-col slds-size_1-of-2 slds-large-size_1-of-3">
+                                                <div class="slds-box slds-box_small">
+                                                    <div class="slds-media">
+                                                        <div class="slds-media__figure">
+                                                            <lightning-avatar src={balance.avatarUrl} 
+                                                                            fallback-icon-name="standard:user" 
+                                                                            alternative-text={balance.playerName}
+                                                                            size="medium"></lightning-avatar>
+                                                        </div>
+                                                        <div class="slds-media__body">
+                                                            <h3 class="slds-text-heading_small">{balance.playerName}</h3>
+                                                            <p class="slds-text-body_small slds-text-color_weak">
+                                                                Paid: {balance.formattedTotalPaid}
+                                                            </p>
+                                                            <p class="slds-text-body_small slds-text-color_weak">
+                                                                Owes: {balance.formattedTotalOwed}
+                                                            </p>
+                                                            <p class={balance.balanceClass}>
+                                                                <strong>Net: {balance.formattedNetBalance}</strong>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template if:false={formattedBalances.length}>
+                                    <div class="slds-illustration slds-illustration_small">
+                                        <div class="slds-text-align_center slds-p-vertical_large">
+                                            <lightning-icon icon-name="utility:balance" size="large" 
+                                                          alternative-text="No balances"></lightning-icon>
+                                            <h3 class="slds-text-heading_medium slds-p-top_medium">No balances to show</h3>
+                                            <p class="slds-text-body_regular">Add expenses to see member balances</p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Settlements Tab -->
+                        <div id="tab-settlements" class={tabContentClasses.settlements} role="tabpanel">
+                            <div class="slds-p-around_medium">
+                                <lightning-button variant="brand" label="Show Suggested Settlements" onclick={fetchOptimalSettlements} class="slds-m-bottom_medium"></lightning-button>
+                                <template if:true={showSuggestions}>
+                                    <div class="slds-box slds-theme_alert-texture slds-m-bottom_medium">
+                                        <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+                                            <h3 class="slds-text-heading_small">Suggested Settlements</h3>
+                                            <lightning-button-icon icon-name="utility:close" alternative-text="Close" title="Close" onclick={hideSuggestions}></lightning-button-icon>
+                                        </div>
+                                        
+                                        <!-- Outstanding Balances -->
+                                        <template if:true={outstandingBalances.length}>
+                                            <div class="slds-m-bottom_medium">
+                                                <h4 class="slds-text-heading_small slds-m-bottom_x-small">
+                                                    <lightning-icon icon-name="utility:money" size="x-small"></lightning-icon>
+                                                    Current Outstanding Balances:
+                                                </h4>
+                                                <div class="slds-box slds-theme_shade slds-p-around_small">
+                                                    <template for:each={formattedOutstandingBalances} for:item="balance">
+                                                        <div key={balance.playerId} class="slds-grid slds-grid_align-spread slds-p-vertical_x-small slds-border_bottom">
+                                                            <div class="slds-col slds-size_1-of-2">
+                                                                <div class="slds-text-body_regular">
+                                                                    <strong>{balance.playerName}</strong>
+                                                                </div>
+                                                                <div class="slds-text-body_small slds-text-color_weak">
+                                                                    Paid: {balance.formattedTotalPaid} | Owed: {balance.formattedTotalOwed}
+                                                                </div>
+                                                            </div>
+                                                            <div class="slds-col slds-size_1-of-2 slds-text-align_right">
+                                                                <template if:true={balance.outstandingBalance}>
+                                                                    <template if:true={balance.status.owed}>
+                                                                        <div class="slds-text-heading_small slds-text-color_success">
+                                                                            +{balance.formattedOutstandingBalance}
+                                                                        </div>
+                                                                        <div class="slds-text-body_small slds-text-color_weak">
+                                                                            Is owed money
+                                                                        </div>
+                                                                    </template>
+                                                                    <template if:true={balance.status.owes}>
+                                                                        <div class="slds-text-heading_small slds-text-color_error">
+                                                                            -{balance.formattedOutstandingBalance}
+                                                                        </div>
+                                                                        <div class="slds-text-body_small slds-text-color_weak">
+                                                                            Owes money
+                                                                        </div>
+                                                                    </template>
+                                                                    <template if:true={balance.status.settled}>
+                                                                        <div class="slds-text-heading_small slds-text-color_default">
+                                                                            {balance.formattedOutstandingBalance}
+                                                                        </div>
+                                                                        <div class="slds-text-body_small slds-text-color_weak">
+                                                                            All settled
+                                                                        </div>
+                                                                    </template>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        
+                                        <!-- Balance Summary -->
+                                        <template if:true={settlementSummary}>
+                                            <div class="balance-summary-grid">
+                                                <div class="balance-summary-item">
+                                                    <p class="slds-text-heading_small slds-text-color_success">{formattedSettlementSummary.totalSettlements}</p>
+                                                    <p class="slds-text-body_small">Settlements Needed</p>
+                                                </div>
+                                                <div class="balance-summary-item">
+                                                    <p class="slds-text-heading_small slds-text-color_error">{formattedSettlementSummary.formattedTotalDebt}</p>
+                                                    <p class="slds-text-body_small">Total Debt</p>
+                                                </div>
+                                                <div class="balance-summary-item">
+                                                    <p class="slds-text-heading_small slds-text-color_success">{formattedSettlementSummary.formattedTotalCredit}</p>
+                                                    <p class="slds-text-body_small">Total Credit</p>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        
+                                        <!-- Creditors and Debtors Summary -->
+                                        <template if:true={formattedSettlementSummary.formattedCreditors.length}>
+                                            <div class="creditor-section">
+                                                <h4 class="slds-text-heading_small slds-text-color_success slds-m-bottom_x-small">
+                                                    <lightning-icon icon-name="utility:up" size="x-small"></lightning-icon>
+                                                    Who is owed money:
+                                                </h4>
+                                                <template for:each={formattedSettlementSummary.formattedCreditors} for:item="creditor">
+                                                    <div key={creditor.playerId} class="slds-text-body_small slds-m-left_medium">
+                                                        <strong>{creditor.playerName}</strong> is owed <strong>{creditor.formattedAmount}</strong>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        
+                                        <template if:true={formattedSettlementSummary.formattedDebtors.length}>
+                                            <div class="debtor-section">
+                                                <h4 class="slds-text-heading_small slds-text-color_error slds-m-bottom_x-small">
+                                                    <lightning-icon icon-name="utility:down" size="x-small"></lightning-icon>
+                                                    Who owes money:
+                                                </h4>
+                                                <template for:each={formattedSettlementSummary.formattedDebtors} for:item="debtor">
+                                                    <div key={debtor.playerId} class="slds-text-body_small slds-m-left_medium">
+                                                        <strong>{debtor.playerName}</strong> owes <strong>{debtor.formattedAmount}</strong>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        
+                                        <!-- Suggested Settlements -->
+                                        <template if:true={suggestedSettlements.length}>
+                                            <div class="slds-m-top_medium">
+                                                <h4 class="slds-text-heading_small slds-m-bottom_x-small">
+                                                    <lightning-icon icon-name="utility:money" size="x-small"></lightning-icon>
+                                                    Recommended Settlements:
+                                                </h4>
+                                                <div class="slds-box slds-theme_shade slds-p-around_small">
+                                                    <template for:each={suggestedSettlements} for:item="s">
+                                                        <div key={s.fromPlayerId} class="settlement-item">
+                                                            <div class="slds-grid slds-grid_align-spread">
+                                                                <div class="slds-col slds-size_1-of-2">
+                                                                    <div class="slds-text-body_regular">
+                                                                        <span class="settlement-number">{s.settlementNumber}</span>
+                                                                        <span class="slds-text-color_error"><strong>{s.fromPlayerName}</strong></span>
+                                                                        <lightning-icon icon-name="utility:forward" size="x-small" class="settlement-arrow"></lightning-icon>
+                                                                        <span class="slds-text-color_success"><strong>{s.toPlayerName}</strong></span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="slds-col slds-size_1-of-2 slds-text-align_right">
+                                                                    <div class="slds-text-heading_small slds-text-color_success">
+                                                                        {s.formattedAmount}
+                                                                    </div>
+                                                                    <div class="slds-text-body_small slds-text-color_weak">
+                                                                        {s.description}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template if:false={suggestedSettlements.length}>
+                                            <div class="no-settlements">
+                                                <lightning-icon icon-name="utility:check" size="medium" class="slds-text-color_success"></lightning-icon>
+                                                <p class="slds-text-heading_small slds-m-top_small">No suggested settlements needed!</p>
+                                                <p class="slds-text-body_small slds-text-color_weak">Group is already settled.</p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template if:true={settlements.length}>
+                                    <template for:each={settlements} for:item="settlement">
+                                        <div key={settlement.id} class="slds-media slds-border_bottom slds-p-vertical_medium">
+                                            <div class="slds-media__figure">
+                                                <lightning-icon icon-name="utility:money" 
+                                                              alternative-text="Settlement" 
+                                                              size="medium"></lightning-icon>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <div class="slds-grid">
+                                                    <div class="slds-col slds-size_1-of-2">
+                                                        <h3 class="slds-text-heading_small">
+                                                            {settlement.fromPlayerName} → {settlement.toPlayerName}
+                                                        </h3>
+                                                        <p class="slds-text-body_small slds-text-color_weak">
+                                                            {settlement.paymentMethod} • {settlement.formattedDate}
+                                                        </p>
+                                                        <template if:true={settlement.notes}>
+                                                            <p class="slds-text-body_small">{settlement.notes}</p>
+                                                        </template>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-4 slds-text-align_center">
+                                                        <lightning-badge label={settlement.status} 
+                                                                       variant={settlement.statusVariant}></lightning-badge>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-4 slds-text-align_right">
+                                                        <p class="slds-text-heading_medium">{settlement.formattedAmount}</p>
+                                                        <template if:true={settlement.canConfirm}>
+                                                            <lightning-button variant="success" 
+                                                                            label="Confirm" 
+                                                                            size="small"
+                                                                            data-settlement-id={settlement.id}
+                                                                            onclick={handleConfirmSettlement}></lightning-button>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:false={settlements.length}>
+                                    <div class="slds-illustration slds-illustration_small">
+                                        <div class="slds-text-align_center slds-p-vertical_large">
+                                            <lightning-icon icon-name="utility:money" size="large" 
+                                                          alternative-text="No settlements"></lightning-icon>
+                                            <h3 class="slds-text-heading_medium slds-p-top_medium">No settlements yet</h3>
+                                            <p class="slds-text-body_regular">Create settlements to track payments</p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Summary Tab -->
+                        <div id="tab-summary" class={tabContentClasses.summary} role="tabpanel">
+                            <div class="slds-p-around_medium">
+                                <c-group-summary
+                                    group-id={groupId}
+                                    members={members}
+                                    expenses={expenses}
+                                    currency={groupData.currency}
+                                ></c-group-summary>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </template>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <template if:true={showExpenseModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                            title="Close" onclick={closeExpenseModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Add Expense</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="slds-form slds-form_stacked">
+                        <div class="slds-form-element slds-is-required">
+                            <label class="slds-form-element__label" for="expense-name">Expense Name</label>
+                            <div class="slds-form-element__control">
+                                <input type="text" id="expense-name" class="slds-input" 
+                                       data-field="name" onchange={handleExpenseInputChange}
+                                       value={expenseForm.name} required />
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-form-element slds-is-required">
+                                    <label class="slds-form-element__label" for="expense-amount">Amount</label>
+                                    <div class="slds-form-element__control">
+                                        <input type="number" id="expense-amount" class="slds-input" 
+                                               data-field="amount" onchange={handleExpenseInputChange}
+                                               value={expenseForm.amount} step="0.01" min="0" required />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-form-element">
+                                    <label class="slds-form-element__label" for="expense-category">Category</label>
+                                    <div class="slds-form-element__control">
+                                        <lightning-combobox name="category" 
+                                                          label="Category"
+                                                          value={expenseForm.category}
+                                                          options={categoryOptions}
+                                                          data-field="category"
+                                                          onchange={handleExpenseInputChange}
+                                                          variant="label-hidden"></lightning-combobox>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-form-element">
+                                    <label class="slds-form-element__label" for="expense-date">Date</label>
+                                    <div class="slds-form-element__control">
+                                        <input type="date" id="expense-date" class="slds-input" 
+                                               data-field="date" onchange={handleExpenseInputChange}
+                                               value={expenseForm.date} />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-form-element">
+                                    <label class="slds-form-element__label" for="split-method">Split Method</label>
+                                    <div class="slds-form-element__control">
+                                        <lightning-combobox name="splitMethod" 
+                                                          label="Split Method"
+                                                          value={expenseForm.splitMethod}
+                                                          options={splitMethodOptions}
+                                                          data-field="splitMethod"
+                                                          onchange={handleExpenseInputChange}
+                                                          variant="label-hidden"></lightning-combobox>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-is-required">
+                            <label class="slds-form-element__label">Split Among</label>
+                            <div class="slds-form-element__control">
+                                <lightning-checkbox-group name="selectedMembers"
+                                                        label="Select Members"
+                                                        options={memberOptions}
+                                                        value={expenseForm.selectedMembers}
+                                                        data-field="selectedMembers"
+                                                        onchange={handleExpenseInputChange}
+                                                        variant="label-hidden"></lightning-checkbox-group>
+                            </div>
+                        </div>
+                        <div class="slds-form-element slds-is-required">
+                            <label class="slds-form-element__label" for="expense-paidby">Paid By</label>
+                            <div class="slds-form-element__control">
+                                <lightning-combobox
+                                    id="expense-paidby"
+                                    name="paidBy"
+                                    label="Paid By"
+                                    value={expenseForm.paidBy}
+                                    options={memberOptions}
+                                    data-field="paidBy"
+                                    onchange={handleExpenseInputChange}
+                                    placeholder="Select who paid"
+                                    required
+                                ></lightning-combobox>
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label" for="expense-notes">Notes</label>
+                            <div class="slds-form-element__control">
+                                <textarea id="expense-notes" class="slds-textarea" 
+                                         data-field="notes" onchange={handleExpenseInputChange}
+                                         placeholder="Optional notes about this expense"></textarea>
+                            </div>
+                        </div>
+                        <!-- Dynamic Split Inputs -->
+                        <template if:true={isUnequalSplit}>
+                            <div class="slds-m-top_medium">
+                                <h3 class="slds-text-heading_small">Enter Amount for Each Member</h3>
+                                <template for:each={selectedMemberObjects} for:item="member">
+                                    <div key={member.value} class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                        <div class="slds-col slds-size_1-of-2">{member.label}</div>
+                                        <div class="slds-col slds-size_1-of-2">
+                                            <input type="number" min="0" step="0.01"
+                                                class="slds-input"
+                                                data-member-id={member.value}
+                                                data-field="splitAmount"
+                                                value={member.splitAmount}
+                                                onchange={handleCustomSplitChange}
+                                                placeholder="Amount" />
+                                        </div>
+                                    </div>
+                                </template>
+                                <div class="slds-text-body_small slds-m-top_x-small">
+                                    Total: {splitAmountSum} / {expenseForm.amount}
+                                </div>
+                            </div>
+                        </template>
+                        <template if:true={isPercentageSplit}>
+                            <div class="slds-m-top_medium">
+                                <h3 class="slds-text-heading_small">Enter Percentage for Each Member</h3>
+                                <template for:each={selectedMemberObjects} for:item="member">
+                                    <div key={member.value} class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                        <div class="slds-col slds-size_1-of-2">{member.label}</div>
+                                        <div class="slds-col slds-size_1-of-2">
+                                            <input type="number" min="0" max="100" step="0.01"
+                                                class="slds-input"
+                                                data-member-id={member.value}
+                                                data-field="splitPercentage"
+                                                value={member.splitPercentage}
+                                                onchange={handleCustomSplitChange}
+                                                placeholder="Percentage" />
+                                        </div>
+                                    </div>
+                                </template>
+                                <div class="slds-text-body_small slds-m-top_x-small">
+                                    Total: {splitPercentageSum} / 100
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label="Cancel" onclick={closeExpenseModal}></lightning-button>
+                    <lightning-button variant="brand" label="Add Expense" onclick={handleAddExpense}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Settlement Modal -->
+    <template if:true={showSettlementModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                            title="Close" onclick={closeSettlementModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Create Settlement</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="slds-form slds-form_stacked">
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-form-element slds-is-required">
+                                    <label class="slds-form-element__label">Who is paying?</label>
+                                    <div class="slds-form-element__control">
+                                        <lightning-combobox name="fromPlayer" 
+                                                          label="From Player"
+                                                          value={settlementForm.fromPlayer}
+                                                          options={settlementFromOptions}
+                                                          data-field="fromPlayer"
+                                                          onchange={handleSettlementInputChange}
+                                                          variant="label-hidden"
+                                                          placeholder="Select player"></lightning-combobox>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-form-element slds-is-required">
+                                    <label class="slds-form-element__label">Who is receiving?</label>
+                                    <div class="slds-form-element__control">
+                                        <lightning-combobox name="toPlayer" 
+                                                          label="To Player"
+                                                          value={settlementForm.toPlayer}
+                                                          options={settlementToOptions}
+                                                          data-field="toPlayer"
+                                                          onchange={handleSettlementInputChange}
+                                                          variant="label-hidden"
+                                                          placeholder="Select player"></lightning-combobox>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-form-element slds-is-required">
+                                    <label class="slds-form-element__label" for="settlement-amount">Amount</label>
+                                    <div class="slds-form-element__control">
+                                        <input type="number" id="settlement-amount" class="slds-input" 
+                                               data-field="amount" onchange={handleSettlementInputChange}
+                                               value={settlementForm.amount} step="0.01" min="0" required />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-form-element">
+                                    <label class="slds-form-element__label">Payment Method</label>
+                                    <div class="slds-form-element__control">
+                                        <lightning-combobox name="paymentMethod" 
+                                                          label="Payment Method"
+                                                          value={settlementForm.paymentMethod}
+                                                          options={paymentMethodOptions}
+                                                          data-field="paymentMethod"
+                                                          onchange={handleSettlementInputChange}
+                                                          variant="label-hidden"></lightning-combobox>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-form-element">
+                            <label class="slds-form-element__label" for="settlement-notes">Notes</label>
+                            <div class="slds-form-element__control">
+                                <textarea id="settlement-notes" class="slds-textarea" 
+                                         data-field="notes" onchange={handleSettlementInputChange}
+                                         placeholder="Optional payment reference or notes"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label="Cancel" onclick={closeSettlementModal}></lightning-button>
+                    <lightning-button variant="brand" label="Create Settlement" onclick={handleCreateSettlement}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Members Modal -->
+    <template if:true={showMemberModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                            title="Close" onclick={closeMemberModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Group Members</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <template if:true={isLoading}>
+                        <div class="slds-spinner_container">
+                            <div role="status" class="slds-spinner slds-spinner_medium">
+                                <span class="slds-assistive-text">Loading</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </template>
+                    <template if:false={isLoading}>
+                        <template if:true={members.length}>
+                            <div class="slds-grid slds-gutters slds-wrap">
+                                <template for:each={members} for:item="member">
+                                    <div key={member.id} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                        <div class="slds-media slds-p-around_small slds-border_bottom">
+                                            <div class="slds-media__figure">
+                                                <lightning-avatar src={member.avatarUrl} 
+                                                                fallback-icon-name="standard:user" 
+                                                                alternative-text={member.playerName}
+                                                                size="medium"></lightning-avatar>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h3 class="slds-text-heading_small">{member.playerName}</h3>
+                                                <template if:true={member.nickname}>
+                                                    <p class="slds-text-body_small slds-text-color_weak">
+                                                        Nickname: {member.nickname}
+                                                    </p>
+                                                </template>
+                                                <template if:true={member.email}>
+                                                    <p class="slds-text-body_small slds-text-color_weak">
+                                                        {member.email}
+                                                    </p>
+                                                </template>
+                                                <div class="slds-grid slds-m-top_x-small">
+                                                    <div class="slds-col">
+                                                        <lightning-badge label={member.role} 
+                                                                       variant={member.roleVariant}></lightning-badge>
+                                                    </div>
+                                                    <div class="slds-col slds-text-align_right">
+                                                        <span class="slds-text-body_small">
+                                                            Joined: {member.formattedJoinDate}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="slds-grid slds-m-top_x-small">
+                                                    <div class="slds-col slds-size_1-of-3">
+                                                        <span class="slds-text-body_small slds-text-color_weak">Paid:</span>
+                                                        <p class="slds-text-body_regular">{member.formattedTotalPaid}</p>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-3">
+                                                        <span class="slds-text-body_small slds-text-color_weak">Owed:</span>
+                                                        <p class="slds-text-body_regular">{member.formattedTotalOwed}</p>
+                                                    </div>
+                                                    <div class="slds-col slds-size_1-of-3">
+                                                        <span class="slds-text-body_small slds-text-color_weak">Balance:</span>
+                                                        <p class={member.balanceClass}>{member.formattedNetBalance}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template if:false={members.length}>
+                            <div class="slds-illustration slds-illustration_small">
+                                <div class="slds-text-align_center slds-p-vertical_large">
+                                    <lightning-icon icon-name="utility:groups" size="large" 
+                                                  alternative-text="No members"></lightning-icon>
+                                    <h3 class="slds-text-heading_medium slds-p-top_medium">No members found</h3>
+                                    <p class="slds-text-body_regular">This group has no active members</p>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                    <div class="slds-p-top_medium">
+                        <div class="slds-box slds-box_small slds-text-align_center">
+                            <lightning-icon icon-name="utility:share" size="small"></lightning-icon>
+                            <p class="slds-text-body_small slds-p-top_x-small">
+                                Share group code: <strong>{groupData.groupCode}</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label="Close" onclick={closeMemberModal}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Expense Details Modal -->
+    <template if:true={showExpenseDetailsModal}>
+        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container slds-modal_large">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
+                            title="Close" onclick={closeExpenseDetailsModal}>
+                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">
+                        <template if:true={isEditingExpense}>Edit Expense</template>
+                        <template if:false={isEditingExpense}>Expense Details</template>
+                    </h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <!-- View Mode -->
+                    <template if:false={isEditingExpense}>
+                        <div class="slds-grid slds-gutters">
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-box slds-box_small">
+                                    <h3 class="slds-text-heading_small slds-m-bottom_small">Expense Information</h3>
+                                    <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                        <div class="slds-col slds-size_1-of-3">
+                                            <span class="slds-text-body_small slds-text-color_weak">Name:</span>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-3">
+                                            <span class="slds-text-body_regular">{selectedExpense.name}</span>
+                                        </div>
+                                    </div>
+                                    <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                        <div class="slds-col slds-size_1-of-3">
+                                            <span class="slds-text-body_small slds-text-color_weak">Amount:</span>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-3">
+                                            <span class="slds-text-heading_medium">{selectedExpense.formattedAmount}</span>
+                                        </div>
+                                    </div>
+                                    <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                        <div class="slds-col slds-size_1-of-3">
+                                            <span class="slds-text-body_small slds-text-color_weak">Category:</span>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-3">
+                                            <span class="slds-text-body_regular">{selectedExpense.category}</span>
+                                        </div>
+                                    </div>
+                                    <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                        <div class="slds-col slds-size_1-of-3">
+                                            <span class="slds-text-body_small slds-text-color_weak">Date:</span>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-3">
+                                            <span class="slds-text-body_regular">{selectedExpense.formattedDate}</span>
+                                        </div>
+                                    </div>
+                                    <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                        <div class="slds-col slds-size_1-of-3">
+                                            <span class="slds-text-body_small slds-text-color_weak">Paid By:</span>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-3">
+                                            <span class="slds-text-body_regular">{selectedExpense.paidByName}</span>
+                                        </div>
+                                    </div>
+                                    <template if:true={selectedExpense.notes}>
+                                        <div class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                            <div class="slds-col slds-size_1-of-3">
+                                                <span class="slds-text-body_small slds-text-color_weak">Notes:</span>
+                                            </div>
+                                            <div class="slds-col slds-size_2-of-3">
+                                                <span class="slds-text-body_regular">{selectedExpense.notes}</span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2">
+                                <div class="slds-box slds-box_small">
+                                    <h3 class="slds-text-heading_small slds-m-bottom_small">Split Details</h3>
+                                    <template if:true={expenseSplits.length}>
+                                        <template for:each={expenseSplits} for:item="split">
+                                            <div key={split.id} class="slds-grid slds-gutters slds-m-bottom_x-small slds-border_bottom slds-p-bottom_x-small">
+                                                <div class="slds-col slds-size_1-of-2">
+                                                    <span class="slds-text-body_regular">{split.playerName}</span>
+                                                    <template if:true={split.isPaid}>
+                                                        <lightning-badge label="Paid" variant="success" class="slds-m-left_x-small"></lightning-badge>
+                                                    </template>
+                                                </div>
+                                                <div class="slds-col slds-size_1-of-4">
+                                                    <span class="slds-text-body_regular">{split.formattedAmount}</span>
+                                                </div>
+                                                <div class="slds-col slds-size_1-of-4">
+                                                    <span class="slds-text-body_small slds-text-color_weak">
+                                                        <template if:true={split.percentage}>{split.percentage}%</template>
+                                                        <template if:false={split.percentage}>Equal</template>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </template>
+                                    <template if:false={expenseSplits.length}>
+                                        <p class="slds-text-body_small slds-text-color_weak">No split details available</p>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Edit Mode -->
+                    <template if:true={isEditingExpense}>
+                        <div class="slds-form slds-form_stacked">
+                            <div class="slds-form-element slds-is-required">
+                                <label class="slds-form-element__label" for="edit-expense-name">Expense Name</label>
+                                <div class="slds-form-element__control">
+                                    <input type="text" id="edit-expense-name" class="slds-input" 
+                                           data-field="name" onchange={handleEditExpenseInputChange}
+                                           value={editExpenseForm.name} required />
+                                </div>
+                            </div>
+                            <div class="slds-grid slds-gutters">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <div class="slds-form-element slds-is-required">
+                                        <label class="slds-form-element__label" for="edit-expense-amount">Amount</label>
+                                        <div class="slds-form-element__control">
+                                            <input type="number" id="edit-expense-amount" class="slds-input" 
+                                                   data-field="amount" onchange={handleEditExpenseInputChange}
+                                                   value={editExpenseForm.amount} step="0.01" min="0" required />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <div class="slds-form-element">
+                                        <label class="slds-form-element__label" for="edit-expense-category">Category</label>
+                                        <div class="slds-form-element__control">
+                                            <lightning-combobox name="category" 
+                                                              label="Category"
+                                                              value={editExpenseForm.category}
+                                                              options={categoryOptions}
+                                                              data-field="category"
+                                                              onchange={handleEditExpenseInputChange}
+                                                              variant="label-hidden"></lightning-combobox>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-grid slds-gutters">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <div class="slds-form-element">
+                                        <label class="slds-form-element__label" for="edit-expense-date">Date</label>
+                                        <div class="slds-form-element__control">
+                                            <input type="date" id="edit-expense-date" class="slds-input" 
+                                                   data-field="date" onchange={handleEditExpenseInputChange}
+                                                   value={editExpenseForm.date} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <div class="slds-form-element">
+                                        <label class="slds-form-element__label" for="edit-split-method">Split Method</label>
+                                        <div class="slds-form-element__control">
+                                            <lightning-combobox name="splitMethod" 
+                                                              label="Split Method"
+                                                              value={editExpenseForm.splitMethod}
+                                                              options={splitMethodOptions}
+                                                              data-field="splitMethod"
+                                                              onchange={handleEditExpenseInputChange}
+                                                              variant="label-hidden"></lightning-combobox>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-is-required">
+                                <label class="slds-form-element__label">Split Among</label>
+                                <div class="slds-form-element__control">
+                                    <lightning-checkbox-group name="selectedMembers"
+                                                            label="Select Members"
+                                                            options={memberOptions}
+                                                            value={editExpenseForm.selectedMembers}
+                                                            data-field="selectedMembers"
+                                                            onchange={handleEditExpenseInputChange}
+                                                            variant="label-hidden"></lightning-checkbox-group>
+                                </div>
+                            </div>
+                            <div class="slds-form-element slds-is-required">
+                                <label class="slds-form-element__label" for="edit-expense-paidby">Paid By</label>
+                                <div class="slds-form-element__control">
+                                    <lightning-combobox
+                                        id="edit-expense-paidby"
+                                        name="paidBy"
+                                        label="Paid By"
+                                        value={editExpenseForm.paidBy}
+                                        options={memberOptions}
+                                        data-field="paidBy"
+                                        onchange={handleEditExpenseInputChange}
+                                        placeholder="Select who paid"
+                                        required
+                                    ></lightning-combobox>
+                                </div>
+                            </div>
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="edit-expense-notes">Notes</label>
+                                <div class="slds-form-element__control">
+                                    <textarea id="edit-expense-notes" class="slds-textarea" 
+                                             data-field="notes" onchange={handleEditExpenseInputChange}
+                                             placeholder="Optional notes about this expense"></textarea>
+                                </div>
+                            </div>
+                            <!-- Dynamic Split Inputs for Edit -->
+                            <template if:true={isEditUnequalSplit}>
+                                <div class="slds-m-top_medium">
+                                    <h3 class="slds-text-heading_small">Enter Amount for Each Member</h3>
+                                    <template for:each={editSelectedMemberObjects} for:item="member">
+                                        <div key={member.value} class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                            <div class="slds-col slds-size_1-of-2">{member.label}</div>
+                                            <div class="slds-col slds-size_1-of-2">
+                                                <input type="number" min="0" step="0.01"
+                                                    class="slds-input"
+                                                    data-member-id={member.value}
+                                                    data-field="splitAmount"
+                                                    value={member.splitAmount}
+                                                    onchange={handleEditCustomSplitChange}
+                                                    placeholder="Amount" />
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div class="slds-text-body_small slds-m-top_x-small">
+                                        Total: {editSplitAmountSum} / {editExpenseForm.amount}
+                                    </div>
+                                </div>
+                            </template>
+                            <template if:true={isEditPercentageSplit}>
+                                <div class="slds-m-top_medium">
+                                    <h3 class="slds-text-heading_small">Enter Percentage for Each Member</h3>
+                                    <template for:each={editSelectedMemberObjects} for:item="member">
+                                        <div key={member.value} class="slds-grid slds-gutters slds-m-bottom_x-small">
+                                            <div class="slds-col slds-size_1-of-2">{member.label}</div>
+                                            <div class="slds-col slds-size_1-of-2">
+                                                <input type="number" min="0" max="100" step="0.01"
+                                                    class="slds-input"
+                                                    data-member-id={member.value}
+                                                    data-field="splitPercentage"
+                                                    value={member.splitPercentage}
+                                                    onchange={handleEditCustomSplitChange}
+                                                    placeholder="Percentage" />
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div class="slds-text-body_small slds-m-top_x-small">
+                                        Total: {editSplitPercentageSum} / 100
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+                <footer class="slds-modal__footer">
+                    <template if:false={isEditingExpense}>
+                        <lightning-button variant="neutral" label="Close" onclick={closeExpenseDetailsModal}></lightning-button>
+                        <lightning-button variant="brand" label="Edit Expense" onclick={startEditExpense}></lightning-button>
+                    </template>
+                    <template if:true={isEditingExpense}>
+                        <lightning-button variant="neutral" label="Cancel" onclick={cancelEditExpense}></lightning-button>
+                        <lightning-button variant="brand" label="Save Changes" onclick={handleSaveExpenseChanges}></lightning-button>
+                    </template>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

@@ -1,0 +1,86 @@
+<template>
+    <div class="login-container">
+        <!-- Login Form -->
+        <div class="login-form">
+            <div class="form-header">
+                <h1 class="form-title">Settle Up</h1>
+                <p class="form-subtitle">Split expenses with friends</p>
+            </div>
+
+            <div class="form-body">
+                <div class="input-group">
+                    <lightning-input
+                        type="email"
+                        label="Email"
+                        value={email}
+                        onchange={handleEmailChange}
+                        onkeypress={handleKeyPress}
+                        class="form-input"
+                        variant="label-stacked">
+                    </lightning-input>
+                </div>
+
+                <div class="input-group">
+                    <lightning-input
+                        type="password"
+                        label="Password"
+                        value={password}
+                        onchange={handlePasswordChange}
+                        onkeypress={handleKeyPress}
+                        class="form-input"
+                        variant="label-stacked">
+                    </lightning-input>
+                </div>
+
+                <!-- Forgot Password Link -->
+                <div class="form-footer">
+                    <lightning-button
+                        variant="base"
+                        label="Forgot Password?"
+                        onclick={showForgotPasswordForm}
+                        class="link-button">
+                    </lightning-button>
+                </div>
+
+                <div class="button-group">
+                    <lightning-button
+                        variant="brand"
+                        label={loginButtonLabel}
+                        onclick={handleLogin}
+                        disabled={isLoginDisabled}
+                        class="login-button">
+                    </lightning-button>
+                </div>
+
+                <div class="demo-section">
+                    <lightning-button
+                        variant="neutral"
+                        label="Demo Login"
+                        onclick={handleDemoLogin}
+                        class="demo-button">
+                    </lightning-button>
+                </div>
+
+                <div class="form-footer">
+                    <p>Don't have an account?</p>
+                    <lightning-button
+                        variant="base"
+                        label="Register Here"
+                        onclick={showRegisterForm}
+                        class="link-button">
+                    </lightning-button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div if:true={isLoading} class="loading-overlay">
+            <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <template if:true={showForgotPassword}>
+            <c-forgot-passwordss onbacktologin={handleBackToLogin}></c-forgot-passwordss>
+        </template>
+    </div>
+</template>

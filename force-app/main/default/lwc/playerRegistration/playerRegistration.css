@@ -1,0 +1,47 @@
+.registration-container {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.slds-spinner_container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slds-input.slds-has-error {
+    border-color: #c23934;
+}
+
+.slds-form-element__help {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.slds-notify {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+.slds-theme_success {
+    background-color: #04844b;
+    color: white;
+}
+
+.slds-theme_success h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.slds-theme_success p {
+    margin: 0;
+    font-size: 0.875rem;
+}
