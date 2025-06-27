@@ -398,12 +398,12 @@
                         <!-- Summary Tab -->
                         <div id="tab-summary" class={tabContentClasses.summary} role="tabpanel">
                             <div class="slds-p-around_medium">
-                                <c-group-summary
+                                <c-group-summary 
                                     group-id={groupId}
                                     members={members}
                                     expenses={expenses}
-                                    currency={groupData.currency}
-                                ></c-group-summary>
+                                    currency={groupData.currency}>
+                                </c-group-summary>
                             </div>
                         </div>
                     </div>

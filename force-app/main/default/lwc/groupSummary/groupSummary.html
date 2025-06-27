@@ -1,3 +1,234 @@
 <template>
-    
+    <div class="dashboard-container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <lightning-icon icon-name="utility:chart" size="medium" class="header-icon"></lightning-icon>
+                <div class="header-text">
+                    <h1 class="dashboard-title">Group Analytics Dashboard</h1>
+                    <p class="dashboard-subtitle">Comprehensive expense insights and analytics</p>
+                </div>
+            </div>
+            
+            <!-- User Filter -->
+            <div class="filter-container">
+                <lightning-combobox
+                    name="userFilter"
+                    label="Filter by User"
+                    value={selectedUserId}
+                    placeholder="Select a user..."
+                    options={userFilterOptions}
+                    onchange={handleUserFilterChange}
+                    variant="label-hidden"
+                    class="user-filter">
+                </lightning-combobox>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <template if:false={isDataReady}>
+            <div class="loading-container">
+                <lightning-spinner alternative-text="Loading dashboard..." size="large" variant="brand"></lightning-spinner>
+                <p class="loading-text">Preparing your analytics dashboard...</p>
+            </div>
+        </template>
+
+        <!-- Dashboard Content -->
+        <template if:true={isDataReady}>
+            <!-- Key Metrics Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card total-expenses">
+                    <div class="metric-icon">
+                        <lightning-icon icon-name="utility:currency" size="large"></lightning-icon>
+                    </div>
+                    <div class="metric-content">
+                        <h3 class="metric-value">{formattedTotalExpenses}</h3>
+                        <p class="metric-label">Total Expenses</p>
+                    </div>
+                </div>
+                
+                <div class="metric-card total-members">
+                    <div class="metric-icon">
+                        <lightning-icon icon-name="utility:groups" size="large"></lightning-icon>
+                    </div>
+                    <div class="metric-content">
+                        <h3 class="metric-value">{totalMembers}</h3>
+                        <p class="metric-label">Active Members</p>
+                    </div>
+                </div>
+                
+                <div class="metric-card avg-expense">
+                    <div class="metric-icon">
+                        <lightning-icon icon-name="utility:trending" size="large"></lightning-icon>
+                    </div>
+                    <div class="metric-content">
+                        <h3 class="metric-value">{formattedAvgExpense}</h3>
+                        <p class="metric-label">Average Expense</p>
+                    </div>
+                </div>
+                
+                <div class="metric-card expense-count">
+                    <div class="metric-icon">
+                        <lightning-icon icon-name="utility:list" size="large"></lightning-icon>
+                    </div>
+                    <div class="metric-content">
+                        <h3 class="metric-value">{totalExpenseCount}</h3>
+                        <p class="metric-label">Total Transactions</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <!-- Expense Trend Line Chart -->
+                <div class="chart-card large-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:graph" size="small"></lightning-icon>
+                            Expense Trends Over Time
+                        </h3>
+                        <div class="chart-actions">
+                            <lightning-button-icon 
+                                icon-name="utility:refresh" 
+                                variant="border-filled" 
+                                alternative-text="Refresh"
+                                size="small">
+                            </lightning-button-icon>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="filteredline" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Expense by Category Doughnut Chart -->
+                <div class="chart-card medium-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:pie_chart" size="small"></lightning-icon>
+                            Expenses by Category
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="category" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Spenders Radar Chart -->
+                <div class="chart-card medium-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:user" size="small"></lightning-icon>
+                            Member Spending Pattern
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="radar" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Expense by User Bar Chart -->
+                <div class="chart-card medium-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:bar_chart" size="small"></lightning-icon>
+                            Expenses by Member
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="user" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Monthly Distribution Polar Chart -->
+                <div class="chart-card medium-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:date_time" size="small"></lightning-icon>
+                            Monthly Distribution
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="polar" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Daily Spending Bubble Chart -->
+                <div class="chart-card large-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:world" size="small"></lightning-icon>
+                            Daily Spending Analysis
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="bubble" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Yearly Trends -->
+                <div class="chart-card medium-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:date_input" size="small"></lightning-icon>
+                            Yearly Overview
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="year" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Spending Velocity -->
+                <div class="chart-card medium-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:speed" size="small"></lightning-icon>
+                            Spending Velocity
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="velocity" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Mixed Chart for Comparison -->
+                <div class="chart-card large-chart">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <lightning-icon icon-name="utility:multi_select_checkbox" size="small"></lightning-icon>
+                            Expense vs Budget Analysis
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas data-chart="mixed" class="chart-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insights Panel -->
+            <div class="insights-panel">
+                <div class="insights-header">
+                    <h3 class="insights-title">
+                        <lightning-icon icon-name="utility:knowledge_base" size="small"></lightning-icon>
+                        Smart Insights
+                    </h3>
+                </div>
+                <div class="insights-content">
+                    <div class="insight-item" if:true={topSpenderInsight}>
+                        <lightning-icon icon-name="utility:trending" size="x-small" class="insight-icon"></lightning-icon>
+                        <span class="insight-text">{topSpenderInsight}</span>
+                    </div>
+                    <div class="insight-item" if:true={categoryInsight}>
+                        <lightning-icon icon-name="utility:info" size="x-small" class="insight-icon"></lightning-icon>
+                        <span class="insight-text">{categoryInsight}</span>
+                    </div>
+                    <div class="insight-item" if:true={trendInsight}>
+                        <lightning-icon icon-name="utility:graph" size="x-small" class="insight-icon"></lightning-icon>
+                        <span class="insight-text">{trendInsight}</span>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
 </template>
